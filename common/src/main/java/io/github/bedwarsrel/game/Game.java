@@ -143,20 +143,12 @@ public class Game {
     return gameLobbyCountdown;
   }
 
-  public void setGameLobbyCountdown(GameLobbyCountdown gameLobbyCountdown) {
-    this.gameLobbyCountdown = gameLobbyCountdown;
-  }
-
   public Location getHologramLocation() {
     return hologramLocation;
   }
 
   public void setHologramLocation(Location hologramLocation) {
     this.hologramLocation = hologramLocation;
-  }
-
-  public boolean isOver() {
-    return isOver;
   }
 
   public void setOver(boolean isOver) {
@@ -191,10 +183,6 @@ public class Game {
     return lobby;
   }
 
-  public void setLobby(Location lobby) {
-    this.lobby = lobby;
-  }
-
   public Location getLoc1() {
     return loc1;
   }
@@ -221,10 +209,6 @@ public class Game {
 
   public int getMinPlayers() {
     return minPlayers;
-  }
-
-  public void setMinPlayers(int minPlayers) {
-    this.minPlayers = minPlayers;
   }
 
   public String getName() {
@@ -359,20 +343,12 @@ public class Game {
     return scoreboard;
   }
 
-  public void setScoreboard(Scoreboard scoreboard) {
-    this.scoreboard = scoreboard;
-  }
-
   public HashMap<Material, MerchantCategory> getShopCategories() {
     return shopCategories;
   }
 
   public void setShopCategories(HashMap<Material, MerchantCategory> shopCategories) {
     this.shopCategories = shopCategories;
-  }
-
-  public List<SpecialItem> getSpecialItems() {
-    return specialItems;
   }
 
   public void setSpecialItems(List<SpecialItem> specialItems) {
@@ -391,20 +367,8 @@ public class Game {
     return state;
   }
 
-  public void setState(GameState state) {
-    this.state = state;
-  }
-
-  public Material getTargetMaterial() {
-    return targetMaterial;
-  }
-
   public void setTargetMaterial(Material targetMaterial) {
     this.targetMaterial = targetMaterial;
-  }
-
-  public HashMap<String, Team> getTeams() {
-    return teams;
   }
 
   public void setTeams(HashMap<String, Team> teams) {

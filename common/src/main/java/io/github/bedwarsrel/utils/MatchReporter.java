@@ -137,7 +137,7 @@ public class MatchReporter {
     appendField(sb, "survival_time", survivalTime, false);
     sb.append(",");
     
-    PlayerStatistic stats = BedwarsRel.getInstance().getStatisticsManager().getStatistic(player);
+    PlayerStatistic stats = BedwarsRel.getInstance().getPlayerStatisticManager().getStatistic(player);
     if (stats != null) {
       appendField(sb, "kills", stats.getCurrentKills(), false);
       sb.append(",");
