@@ -81,6 +81,8 @@ public class Game {
   private Map<Player, Player> playerDamages = null;
   private Map<Player, PlayerSettings> playerSettings = null;
   private HashMap<Player, PlayerStorage> playerStorages = null;
+  private Map<Player, Integer> playerSurvivalTimes = null;
+  private Map<Player, Team> participants = null;
   private List<Team> playingTeams = null;
   private int record = 0;
   private List<String> recordHolders = null;
@@ -92,6 +94,7 @@ public class Game {
   private Scoreboard scoreboard = null;
   private HashMap<Material, MerchantCategory> shopCategories = null;
   private List<SpecialItem> specialItems = null;
+  private long startedAt = 0;
   private GameState state = null;
   private Material targetMaterial = null;
   private HashMap<String, Team> teams = null;
@@ -120,6 +123,8 @@ public class Game {
     this.newItemShops = new HashMap<Player, NewItemShop>();
     this.respawnProtections = new HashMap<Player, RespawnProtectionRunnable>();
     this.playerDamages = new HashMap<Player, Player>();
+    this.playerSurvivalTimes = new HashMap<Player, Integer>();
+    this.participants = new HashMap<Player, Team>();
     this.specialItems = new ArrayList<SpecialItem>();
 
     this.record = BedwarsRel.getInstance().getMaxLength();
@@ -1682,6 +1687,13 @@ public class Game {
     this.getRegion().getWorld().setTime(this.time);
 
     this.teleportPlayersToTeamSpawn();
+    this.startedAt = System.currentTimeMillis();
+
+    for (Team team : this.teams.values()) {
+      for (Player player : team.getPlayers()) {
+        this.participants.put(player, team);
+      }
+    }
 
     this.state = GameState.RUNNING;
 
@@ -1848,6 +1860,11 @@ public class Game {
 
     if (!this.freePlayers.contains(player)) {
       this.freePlayers.add(player);
+    }
+
+    if (this.state == GameState.RUNNING && !this.playerSurvivalTimes.containsKey(player)) {
+      int survivalTime = (int) ((System.currentTimeMillis() - this.startedAt) / 1000);
+      this.playerSurvivalTimes.put(player, survivalTime);
     }
 
     PlayerStorage storage = this.getPlayerStorage(player);

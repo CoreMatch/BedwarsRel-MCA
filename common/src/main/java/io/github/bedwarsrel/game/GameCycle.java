@@ -295,6 +295,8 @@ public abstract class GameCycle {
       return;
     }
 
+    io.github.bedwarsrel.utils.MatchReporter.report(this.getGame(), winner);
+
     this.getGame().stopWorkers();
     this.setEndGameRunning(true);
 

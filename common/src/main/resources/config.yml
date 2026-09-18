@@ -962,3 +962,10 @@ player-settings:
   # Set the default shop on game start.
   # Player can change that in shop, this is just a default
   old-shop-as-default: false
+
+# Match reporting configuration
+match-reporting:
+  # The API endpoint for reporting match results
+  api-url: "https://api.matchcorearena.com/api/matches"
+  # The access token for authentication
+  access-token: "your-access-token-here"
