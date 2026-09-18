@@ -127,9 +127,7 @@ public class MatchReporter {
 
   private static void appendParticipantInfo(StringBuilder sb, Game game, Player player) {
     sb.append("{");
-    // User requested to use UUID as UID. Since API requires int64, we use the hash of UUID.
-    // Or we can use getMostSignificantBits() which is a long.
-    appendField(sb, "uid", player.getUniqueId().getMostSignificantBits(), false);
+    appendField(sb, "uuid", player.getUniqueId().toString(), true);
     sb.append(",");
     
     int survivalTime = game.getPlayerSurvivalTimes().containsKey(player) 
