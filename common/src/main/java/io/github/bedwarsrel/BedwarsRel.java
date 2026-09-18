@@ -848,9 +848,7 @@ public class BedwarsRel extends JavaPlugin {
     new WeatherListener();
     new BlockListener();
     new PlayerListener();
-    if (!BedwarsRel.getInstance().getCurrentVersion().startsWith("v1_8")) {
-      new Player19Listener();
-    }
+    new Player19Listener();
     new HangingListener();
     new EntityListener();
     new ServerListener();

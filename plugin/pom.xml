@@ -22,48 +22,6 @@
     </dependency>
     <dependency>
       <groupId>io.github.bedwarsrel.com</groupId>
-      <artifactId>BedwarsRel-v1_8_r1</artifactId>
-      <version>${project.parent.version}</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.github.bedwarsrel.com</groupId>
-      <artifactId>BedwarsRel-v1_8_r2</artifactId>
-      <version>${project.parent.version}</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.github.bedwarsrel.com</groupId>
-      <artifactId>BedwarsRel-v1_8_r3</artifactId>
-      <version>${project.parent.version}</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.github.bedwarsrel.com</groupId>
-      <artifactId>BedwarsRel-v1_9_r1</artifactId>
-      <version>${project.parent.version}</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.github.bedwarsrel.com</groupId>
-      <artifactId>BedwarsRel-v1_9_r2</artifactId>
-      <version>${project.parent.version}</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.github.bedwarsrel.com</groupId>
-      <artifactId>BedwarsRel-v1_10_r1</artifactId>
-      <version>${project.parent.version}</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.github.bedwarsrel.com</groupId>
-      <artifactId>BedwarsRel-v1_11_r1</artifactId>
-      <version>${project.parent.version}</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.github.bedwarsrel.com</groupId>
       <artifactId>BedwarsRel-v1_12_r1</artifactId>
       <version>${project.parent.version}</version>
       <scope>compile</scope>
