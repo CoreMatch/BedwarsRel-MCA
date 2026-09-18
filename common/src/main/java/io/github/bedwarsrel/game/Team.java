@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.Data;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -23,7 +22,6 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 
-@Data
 @SerializableAs("Team")
 public class Team implements ConfigurationSerializable {
 
@@ -36,6 +34,74 @@ public class Team implements ConfigurationSerializable {
   private Location spawnLocation = null;
   private Location targetFeetBlock = null;
   private Location targetHeadBlock = null;
+
+  public List<Block> getChests() {
+    return chests;
+  }
+
+  public void setChests(List<Block> chests) {
+    this.chests = chests;
+  }
+
+  public TeamColor getColor() {
+    return color;
+  }
+
+  public void setColor(TeamColor color) {
+    this.color = color;
+  }
+
+  public Inventory getInventory() {
+    return inventory;
+  }
+
+  public void setInventory(Inventory inventory) {
+    this.inventory = inventory;
+  }
+
+  public int getMaxPlayers() {
+    return maxPlayers;
+  }
+
+  public void setMaxPlayers(int maxPlayers) {
+    this.maxPlayers = maxPlayers;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public org.bukkit.scoreboard.Team getScoreboardTeam() {
+    return scoreboardTeam;
+  }
+
+  public Location getSpawnLocation() {
+    return spawnLocation;
+  }
+
+  public void setSpawnLocation(Location spawnLocation) {
+    this.spawnLocation = spawnLocation;
+  }
+
+  public Location getTargetFeetBlock() {
+    return targetFeetBlock;
+  }
+
+  public void setTargetFeetBlock(Location targetFeetBlock) {
+    this.targetFeetBlock = targetFeetBlock;
+  }
+
+  public Location getTargetHeadBlock() {
+    return targetHeadBlock;
+  }
+
+  public void setTargetHeadBlock(Location targetHeadBlock) {
+    this.targetHeadBlock = targetHeadBlock;
+  }
 
   public Team(Map<String, Object> deserialize) {
     this.setName(deserialize.get("name").toString());

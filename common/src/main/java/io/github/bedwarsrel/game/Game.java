@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import lombok.Data;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
@@ -55,7 +54,6 @@ import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.util.Vector;
 
-@Data
 public class Game {
 
   private boolean autobalance = false;
@@ -100,6 +98,334 @@ public class Game {
   private HashMap<String, Team> teams = null;
   private int time = 1000;
   private int timeLeft = 0;
+
+  public boolean isAutobalance() {
+    return autobalance;
+  }
+
+  public void setAutobalance(boolean autobalance) {
+    this.autobalance = autobalance;
+  }
+
+  public String getBuilder() {
+    return builder;
+  }
+
+  public void setBuilder(String builder) {
+    this.builder = builder;
+  }
+
+  public YamlConfiguration getConfig() {
+    return config;
+  }
+
+  public void setConfig(YamlConfiguration config) {
+    this.config = config;
+  }
+
+  public GameCycle getCycle() {
+    return cycle;
+  }
+
+  public void setCycle(GameCycle cycle) {
+    this.cycle = cycle;
+  }
+
+  public List<Player> getFreePlayers() {
+    return freePlayers;
+  }
+
+  public void setFreePlayers(List<Player> freePlayers) {
+    this.freePlayers = freePlayers;
+  }
+
+  public GameLobbyCountdown getGameLobbyCountdown() {
+    return gameLobbyCountdown;
+  }
+
+  public void setGameLobbyCountdown(GameLobbyCountdown gameLobbyCountdown) {
+    this.gameLobbyCountdown = gameLobbyCountdown;
+  }
+
+  public Location getHologramLocation() {
+    return hologramLocation;
+  }
+
+  public void setHologramLocation(Location hologramLocation) {
+    this.hologramLocation = hologramLocation;
+  }
+
+  public boolean isOver() {
+    return isOver;
+  }
+
+  public void setOver(boolean isOver) {
+    this.isOver = isOver;
+  }
+
+  public boolean isStopping() {
+    return isStopping;
+  }
+
+  public void setStopping(boolean isStopping) {
+    this.isStopping = isStopping;
+  }
+
+  public HashMap<Location, GameJoinSign> getJoinSigns() {
+    return joinSigns;
+  }
+
+  public void setJoinSigns(HashMap<Location, GameJoinSign> joinSigns) {
+    this.joinSigns = joinSigns;
+  }
+
+  public int getLength() {
+    return length;
+  }
+
+  public void setLength(int length) {
+    this.length = length;
+  }
+
+  public Location getLobby() {
+    return lobby;
+  }
+
+  public void setLobby(Location lobby) {
+    this.lobby = lobby;
+  }
+
+  public Location getLoc1() {
+    return loc1;
+  }
+
+  public void setLoc1(Location loc1) {
+    this.loc1 = loc1;
+  }
+
+  public Location getLoc2() {
+    return loc2;
+  }
+
+  public void setLoc2(Location loc2) {
+    this.loc2 = loc2;
+  }
+
+  public Location getMainLobby() {
+    return mainLobby;
+  }
+
+  public void setMainLobby(Location mainLobby) {
+    this.mainLobby = mainLobby;
+  }
+
+  public int getMinPlayers() {
+    return minPlayers;
+  }
+
+  public void setMinPlayers(int minPlayers) {
+    this.minPlayers = minPlayers;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public HashMap<Player, NewItemShop> getNewItemShops() {
+    return newItemShops;
+  }
+
+  public void setNewItemShops(HashMap<Player, NewItemShop> newItemShops) {
+    this.newItemShops = newItemShops;
+  }
+
+  public List<MerchantCategory> getOrderedShopCategories() {
+    return orderedShopCategories;
+  }
+
+  public void setOrderedShopCategories(List<MerchantCategory> orderedShopCategories) {
+    this.orderedShopCategories = orderedShopCategories;
+  }
+
+  public Map<Player, Player> getPlayerDamages() {
+    return playerDamages;
+  }
+
+  public void setPlayerDamages(Map<Player, Player> playerDamages) {
+    this.playerDamages = playerDamages;
+  }
+
+  public Map<Player, PlayerSettings> getPlayerSettings() {
+    return playerSettings;
+  }
+
+  public void setPlayerSettings(Map<Player, PlayerSettings> playerSettings) {
+    this.playerSettings = playerSettings;
+  }
+
+  public HashMap<Player, PlayerStorage> getPlayerStorages() {
+    return playerStorages;
+  }
+
+  public void setPlayerStorages(HashMap<Player, PlayerStorage> playerStorages) {
+    this.playerStorages = playerStorages;
+  }
+
+  public Map<Player, Integer> getPlayerSurvivalTimes() {
+    return playerSurvivalTimes;
+  }
+
+  public void setPlayerSurvivalTimes(Map<Player, Integer> playerSurvivalTimes) {
+    this.playerSurvivalTimes = playerSurvivalTimes;
+  }
+
+  public Map<Player, Team> getParticipants() {
+    return participants;
+  }
+
+  public void setParticipants(Map<Player, Team> participants) {
+    this.participants = participants;
+  }
+
+  public List<Team> getPlayingTeams() {
+    return playingTeams;
+  }
+
+  public void setPlayingTeams(List<Team> playingTeams) {
+    this.playingTeams = playingTeams;
+  }
+
+  public int getRecord() {
+    return record;
+  }
+
+  public void setRecord(int record) {
+    this.record = record;
+  }
+
+  public List<String> getRecordHolders() {
+    return recordHolders;
+  }
+
+  public void setRecordHolders(List<String> recordHolders) {
+    this.recordHolders = recordHolders;
+  }
+
+  public Region getRegion() {
+    return region;
+  }
+
+  public void setRegion(Region region) {
+    this.region = region;
+  }
+
+  public String getRegionName() {
+    return regionName;
+  }
+
+  public void setRegionName(String regionName) {
+    this.regionName = regionName;
+  }
+
+  public List<ResourceSpawner> getResourceSpawners() {
+    return resourceSpawners;
+  }
+
+  public void setResourceSpawners(List<ResourceSpawner> resourceSpawners) {
+    this.resourceSpawners = resourceSpawners;
+  }
+
+  public Map<Player, RespawnProtectionRunnable> getRespawnProtections() {
+    return respawnProtections;
+  }
+
+  public void setRespawnProtections(Map<Player, RespawnProtectionRunnable> respawnProtections) {
+    this.respawnProtections = respawnProtections;
+  }
+
+  public List<BukkitTask> getRunningTasks() {
+    return runningTasks;
+  }
+
+  public void setRunningTasks(List<BukkitTask> runningTasks) {
+    this.runningTasks = runningTasks;
+  }
+
+  public Scoreboard getScoreboard() {
+    return scoreboard;
+  }
+
+  public void setScoreboard(Scoreboard scoreboard) {
+    this.scoreboard = scoreboard;
+  }
+
+  public HashMap<Material, MerchantCategory> getShopCategories() {
+    return shopCategories;
+  }
+
+  public void setShopCategories(HashMap<Material, MerchantCategory> shopCategories) {
+    this.shopCategories = shopCategories;
+  }
+
+  public List<SpecialItem> getSpecialItems() {
+    return specialItems;
+  }
+
+  public void setSpecialItems(List<SpecialItem> specialItems) {
+    this.specialItems = specialItems;
+  }
+
+  public long getStartedAt() {
+    return startedAt;
+  }
+
+  public void setStartedAt(long startedAt) {
+    this.startedAt = startedAt;
+  }
+
+  public GameState getState() {
+    return state;
+  }
+
+  public void setState(GameState state) {
+    this.state = state;
+  }
+
+  public Material getTargetMaterial() {
+    return targetMaterial;
+  }
+
+  public void setTargetMaterial(Material targetMaterial) {
+    this.targetMaterial = targetMaterial;
+  }
+
+  public HashMap<String, Team> getTeams() {
+    return teams;
+  }
+
+  public void setTeams(HashMap<String, Team> teams) {
+    this.teams = teams;
+  }
+
+  public int getTime() {
+    return time;
+  }
+
+  public void setTime(int time) {
+    this.time = time;
+  }
+
+  public int getTimeLeft() {
+    return timeLeft;
+  }
+
+  public void setTimeLeft(int timeLeft) {
+    this.timeLeft = timeLeft;
+  }
 
   public Game(String name) {
     super();

@@ -8,8 +8,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.Getter;
-import lombok.Setter;
 import org.bukkit.Location;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
@@ -19,8 +17,6 @@ import org.bukkit.entity.Item;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
-@Getter
-@Setter
 @SerializableAs("RessourceSpawner")
 public class ResourceSpawner implements Runnable, ConfigurationSerializable {
 
@@ -30,6 +26,54 @@ public class ResourceSpawner implements Runnable, ConfigurationSerializable {
   private Location location = null;
   private double spread = 1.0;
   private String name = null;
+
+  public Game getGame() {
+    return game;
+  }
+
+  public void setGame(Game game) {
+    this.game = game;
+  }
+
+  public int getInterval() {
+    return interval;
+  }
+
+  public void setInterval(int interval) {
+    this.interval = interval;
+  }
+
+  public List<ItemStack> getResources() {
+    return resources;
+  }
+
+  public void setResources(List<ItemStack> resources) {
+    this.resources = resources;
+  }
+
+  public Location getLocation() {
+    return location;
+  }
+
+  public void setLocation(Location location) {
+    this.location = location;
+  }
+
+  public double getSpread() {
+    return spread;
+  }
+
+  public void setSpread(double spread) {
+    this.spread = spread;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
 
   public ResourceSpawner(Map<String, Object> deserialize) {
     this.location = Utils.locationDeserialize(deserialize.get("location"));

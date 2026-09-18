@@ -5,12 +5,14 @@ import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.TimeZone;
-import lombok.Getter;
 
 public class DatabaseManager {
 
-  @Getter
   private String tablePrefix = "bw_";
+
+  public String getTablePrefix() {
+    return tablePrefix;
+  }
   private String database = null;
   private HikariDataSource dataSource = null;
   private String host = null;

@@ -6,8 +6,6 @@ import io.github.bedwarsrel.utils.ChatWriter;
 import io.github.bedwarsrel.utils.SoundMachine;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import lombok.Getter;
-import lombok.Setter;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -15,14 +13,26 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 public class GameLobbyCountdown extends BukkitRunnable {
 
-  @Getter
-  @Setter
   private int counter = 0;
   private Game game = null;
-  @Getter
   private int lobbytime;
-  @Getter
   private int lobbytimeWhenFull;
+
+  public int getCounter() {
+    return counter;
+  }
+
+  public void setCounter(int counter) {
+    this.counter = counter;
+  }
+
+  public int getLobbytime() {
+    return lobbytime;
+  }
+
+  public int getLobbytimeWhenFull() {
+    return lobbytimeWhenFull;
+  }
 
   public GameLobbyCountdown(Game game) {
     this.game = game;

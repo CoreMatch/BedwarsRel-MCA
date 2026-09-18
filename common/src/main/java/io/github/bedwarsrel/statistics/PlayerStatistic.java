@@ -5,15 +5,10 @@ import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.Setter;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.Player;
 
-@Getter
-@Setter
 public class PlayerStatistic implements ConfigurationSerializable {
 
   private int currentDeaths = 0;
@@ -22,22 +17,94 @@ public class PlayerStatistic implements ConfigurationSerializable {
   private int currentLoses = 0;
   private int currentScore = 0;
   private int currentWins = 0;
-  @Setter(AccessLevel.NONE)
   private int deaths = 0;
-  @Setter(AccessLevel.NONE)
   private int destroyedBeds = 0;
-  @Setter(AccessLevel.NONE)
   private int kills = 0;
-  @Setter(AccessLevel.NONE)
   private int loses = 0;
   private String name = "";
-  @Setter(AccessLevel.NONE)
   private int score = 0;
-  @Getter(AccessLevel.NONE)
-  @Setter(AccessLevel.NONE)
   private UUID uuid;
-  @Setter(AccessLevel.NONE)
   private int wins = 0;
+
+  public int getCurrentDeaths() {
+    return currentDeaths;
+  }
+
+  public void setCurrentDeaths(int currentDeaths) {
+    this.currentDeaths = currentDeaths;
+  }
+
+  public int getCurrentDestroyedBeds() {
+    return currentDestroyedBeds;
+  }
+
+  public void setCurrentDestroyedBeds(int currentDestroyedBeds) {
+    this.currentDestroyedBeds = currentDestroyedBeds;
+  }
+
+  public int getCurrentKills() {
+    return currentKills;
+  }
+
+  public void setCurrentKills(int currentKills) {
+    this.currentKills = currentKills;
+  }
+
+  public int getCurrentLoses() {
+    return currentLoses;
+  }
+
+  public void setCurrentLoses(int currentLoses) {
+    this.currentLoses = currentLoses;
+  }
+
+  public int getCurrentScore() {
+    return currentScore;
+  }
+
+  public void setCurrentScore(int currentScore) {
+    this.currentScore = currentScore;
+  }
+
+  public int getCurrentWins() {
+    return currentWins;
+  }
+
+  public void setCurrentWins(int currentWins) {
+    this.currentWins = currentWins;
+  }
+
+  public int getDeaths() {
+    return deaths;
+  }
+
+  public int getDestroyedBeds() {
+    return destroyedBeds;
+  }
+
+  public int getKills() {
+    return kills;
+  }
+
+  public int getLoses() {
+    return loses;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public int getScore() {
+    return score;
+  }
+
+  public int getWins() {
+    return wins;
+  }
 
 
   public PlayerStatistic(UUID uuid) {

@@ -50,7 +50,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -71,19 +70,15 @@ public class BedwarsRel extends JavaPlugin {
   private static BedwarsRel instance = null;
   private static Boolean locationSerializable = null;
   private List<Material> breakableTypes = null;
-  @Getter
   private Bugsnag bugsnag;
   private ArrayList<BaseCommand> commands = new ArrayList<>();
   private Package craftbukkit = null;
   private DatabaseManager dbManager = null;
-  @Getter
   private GameManager gameManager = null;
   private IHologramInteraction holographicInteraction = null;
   private boolean isSpigot = false;
-  @Getter
   private HashMap<String, LocalizationConfig> localization = new HashMap<>();
   private Package minecraft = null;
-  @Getter
   private HashMap<UUID, String> playerLocales = new HashMap<>();
   private PlayerStatisticManager playerStatisticManager = null;
   private ScoreboardManager scoreboardManager = null;
@@ -91,6 +86,22 @@ public class BedwarsRel extends JavaPlugin {
   private BukkitTask timeTask = null;
   private BukkitTask updateChecker = null;
   private String version = null;
+
+  public Bugsnag getBugsnag() {
+    return bugsnag;
+  }
+
+  public GameManager getGameManager() {
+    return gameManager;
+  }
+
+  public HashMap<String, LocalizationConfig> getLocalization() {
+    return localization;
+  }
+
+  public HashMap<UUID, String> getPlayerLocales() {
+    return playerLocales;
+  }
 
   public static String _l(CommandSender commandSender, String key, String singularValue,
       Map<String, String> params) {
@@ -777,12 +788,10 @@ public class BedwarsRel extends JavaPlugin {
 
     // holograms
     if (this.isHologramsEnabled()) {
-      if (this.getServer().getPluginManager().isPluginEnabled("HologramAPI")) {
-        this.holographicInteraction = new HologramAPIInteraction();
-      } else if (this.getServer().getPluginManager().isPluginEnabled("HolographicDisplays")) {
+      if (this.getServer().getPluginManager().isPluginEnabled("HolographicDisplays")) {
         this.holographicInteraction = new HolographicDisplaysInteraction();
+        this.holographicInteraction.loadHolograms();
       }
-      this.holographicInteraction.loadHolograms();
     }
   }
 

@@ -14,7 +14,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import lombok.Getter;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -22,8 +21,11 @@ import org.bukkit.entity.Player;
 
 public class HolographicDisplaysInteraction implements IHologramInteraction {
 
-  @Getter
   private ArrayList<Location> hologramLocations = null;
+
+  public ArrayList<Location> getHologramLocations() {
+    return hologramLocations;
+  }
   private Map<Player, List<Hologram>> holograms = null;
 
   public void addHologramLocation(Location eyeLocation) {

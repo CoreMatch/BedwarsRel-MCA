@@ -5,7 +5,6 @@ import io.github.bedwarsrel.utils.Utils;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import lombok.Getter;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -20,10 +19,13 @@ public class ItemStackParser {
 
   private int amount = 1;
   private Object configSection = null;
-  @Getter
   private ItemStack finalStack = null;
   private LinkedHashMap<String, Object> linkedSection = null;
   private Material material = null;
+
+  public ItemStack getFinalStack() {
+    return finalStack;
+  }
 
   public ItemStackParser(Object section) {
     this.configSection = section;
