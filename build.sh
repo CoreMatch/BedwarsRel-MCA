@@ -24,12 +24,6 @@ if ! command_exists mvn; then
     exit 1
 fi
 
-# Check for Wget (needed by get-dependencies.sh)
-if ! command_exists wget; then
-    echo "Error: wget is not installed. It is required to download dependencies."
-    exit 1
-fi
-
 echo "Step 1: Installing version-specific dependencies..."
 # The project requires multiple CraftBukkit versions in the local repo to compile version-specific modules
 if [ -d "build" ] && [ -f "build/get-dependencies.sh" ]; then
