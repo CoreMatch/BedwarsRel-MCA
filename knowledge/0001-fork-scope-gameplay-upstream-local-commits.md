@@ -23,8 +23,8 @@ This is a statement of verified fact about the fork's scope:
     field fix).
   - Build / dependency / version-support modernization (5): `3f9b7d55` (drop
   pre-1.12 NMS modules), `07bfb360` (drop HologramAPI, replace lombok, update
-  build), `dc60f723` (clean code, fix stat manager), `aefd8fc1` (re-add 1.8.x
-  NMS modules), `f4a30bb2` (local jars, drop wget).
+  build), `dc60f723` (clean code, fix stat manager), `aefd8fc1` (1.8.x NMS
+  modules), `f4a30bb2` (local jars, drop wget).
 - In the total diff vs upstream, every added line in gameplay files is lombok
   getter/setter expansion or reporting state-tracking; there is **no gameplay
   logic change**.
@@ -54,7 +54,7 @@ This is a statement of verified fact about the fork's scope:
   - `07bfb360` — build: deletes `HologramAPIInteraction.java`, lombok→handwritten,
     commits 39.7MB `craftbukkit-1.12.jar` (14 files +591/-293).
   - `dc60f723` — cleanup (3 files +2/-38).
-  - `aefd8fc1` — version support: re-adds v1_8_r1/r2/r3 NMS modules (31 files
+  - `aefd8fc1` — version support: adds v1_8_r1/r2/r3 NMS modules (31 files
     +1549/-13).
   - `f4a30bb2` — build: local jars, commits ~57MB of craftbukkit 1.8 jars,
     removes wget (5 files +20/-27).
