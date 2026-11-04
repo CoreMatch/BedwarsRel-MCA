@@ -51,7 +51,7 @@ MatchCoreArena API:
   `:48` (`Authorization: Bearer`), `:40-42` (skip on missing/placeholder token);
   defaults `common/src/main/resources/config.yml:969` (api-url), `:971`
   (access-token).
-- Trigger: `common/src/main/java/io/github/bedwarsrel/GameCycle.java:290-298`
+- Trigger: `common/src/main/java/io/github/bedwarsrel/game/GameCycle.java:290-298`
   (`runGameOver`, call after non-cancelled `BedwarsGameOverEvent`); async
   thread `MatchReporter.java:24-33`.
 - Payload fields: `MatchReporter.java:64-98` (JSON build), `:90`
@@ -59,8 +59,8 @@ MatchCoreArena API:
   `:130` (`uuid`), `:133-137` (`survival_time`), `:142-148` (kills/deaths),
   `:151` (`perf_tweak` hard-coded 1.0), `:166-181` (`match_type`), `:183-187`
   (ISO-8601 UTC).
-- Data collection: `common/src/main/java/io/github/bedwarsrel/Game.java`
-  (start snapshot ~`:1690-1696`, survival time on leave ~`:1865-1868`, getters
+- Data collection: `common/src/main/java/io/github/bedwarsrel/game/Game.java`
+  (start snapshot ~`:1980-1986`, survival time on leave ~`:2155-2158`, getters
   `:358,262,270`); introduced by `36aa815a`.
 - uuid fix: commit `620601be` (`uid` numeric high-bits → `uuid` full string).
 - Receiving side: MatchCoreArena-Server `api/router.go:84`
