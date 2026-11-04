@@ -46,30 +46,55 @@ MatchCoreArena API:
 
 ## Evidence
 
-- Reporter class: `common/src/main/java/io/github/bedwarsrel/utils/MatchReporter.java:17`.
-- Endpoint and auth: `MatchReporter.java:37-38` (read `api-url`/`access-token`),
-  `:48` (`Authorization: Bearer`), `:40-42` (skip on missing/placeholder token);
-  defaults `common/src/main/resources/config.yml:969` (api-url), `:971`
-  (access-token).
-- Trigger: `common/src/main/java/io/github/bedwarsrel/game/GameCycle.java:290-298`
-  (`runGameOver`, call after non-cancelled `BedwarsGameOverEvent`); async
-  thread `MatchReporter.java:24-33`.
-- Payload fields: `MatchReporter.java:64-98` (JSON build), `:90`
-  (`duration_seconds`), `:92-94` (timestamps), `:102-106` (team fields),
-  `:130` (`uuid`), `:133-137` (`survival_time`), `:142-148` (kills/deaths),
-  `:151` (`perf_tweak` hard-coded 1.0), `:166-181` (`match_type`), `:183-187`
+- Reporter class:
+  `common/src/main/java/io/github/bedwarsrel/utils/MatchReporter.java::MatchReporter`.
+- Endpoint and auth:
+  `common/src/main/java/io/github/bedwarsrel/utils/MatchReporter.java::sendReport`
+  (reads `api-url`/`access-token`, sends `Authorization: Bearer`, skips on
+  missing/placeholder token); defaults
+  `common/src/main/resources/config.yml (field: api-url)`,
+  `common/src/main/resources/config.yml (field: access-token)`.
+- Trigger:
+  `common/src/main/java/io/github/bedwarsrel/game/GameCycle.java::runGameOver`
+  (call after non-cancelled `BedwarsGameOverEvent`); async thread
+  `common/src/main/java/io/github/bedwarsrel/utils/MatchReporter.java::report`.
+- Payload fields:
+  `common/src/main/java/io/github/bedwarsrel/utils/MatchReporter.java::buildJson`
+  (JSON build, `duration_seconds`, timestamps),
+  `common/src/main/java/io/github/bedwarsrel/utils/MatchReporter.java::appendTeamInfo`
+  (team fields),
+  `common/src/main/java/io/github/bedwarsrel/utils/MatchReporter.java::appendParticipantInfo`
+  (`uuid`, `survival_time`, kills/deaths, `perf_tweak` hard-coded 1.0),
+  `common/src/main/java/io/github/bedwarsrel/utils/MatchReporter.java::getMatchType`
+  (`match_type`),
+  `common/src/main/java/io/github/bedwarsrel/utils/MatchReporter.java::formatIso8601`
   (ISO-8601 UTC).
-- Data collection: `common/src/main/java/io/github/bedwarsrel/game/Game.java`
-  (start snapshot ~`:1980-1986`, survival time on leave ~`:2155-2158`, getters
-  `:358,262,270`); introduced by `36aa815a`.
+- Data collection:
+  `common/src/main/java/io/github/bedwarsrel/game/Game.java::startedAt`
+  (start snapshot),
+  `common/src/main/java/io/github/bedwarsrel/game/Game.java::playerSurvivalTimes`
+  (survival time on leave), getters
+  `common/src/main/java/io/github/bedwarsrel/game/Game.java::getStartedAt`,
+  `common/src/main/java/io/github/bedwarsrel/game/Game.java::getPlayerSurvivalTimes`,
+  `common/src/main/java/io/github/bedwarsrel/game/Game.java::getParticipants`;
+  introduced by `36aa815a`.
 - uuid fix: commit `620601be` (`uid` numeric high-bits → `uuid` full string).
-- Receiving side: MatchCoreArena-Server `api/router.go:84`
-  (`api.POST("/matches", matchH.Report)` under `/api` auth group `:56-57`);
-  scope requirement `api/handler/match.go:27` (`match:report`); bearer check
-  `api/middleware/auth.go:66-68`; expected struct
-  `internal/service/match.go:43-65` (fields incl. `uuid` `binding:"required"`
-  `:60`); processing `internal/service/match.go:100-251` (resolveUID, Elo
-  deltas, `rank_score` update, rankings), `:271-295` (`resolveUID`).
+- Receiving side: MatchCoreArena-Server
+  `/home/lnb/Desktop/HA/MatchCoreArena-Server/api/router.go::Report`
+  (`api.POST("/matches", matchH.Report)` under `/api` auth group
+  `/home/lnb/Desktop/HA/MatchCoreArena-Server/api/router.go:L56-L57`);
+  scope requirement
+  `/home/lnb/Desktop/HA/MatchCoreArena-Server/api/handler/match.go::Report`
+  (`match:report`); bearer check
+  `/home/lnb/Desktop/HA/MatchCoreArena-Server/api/middleware/auth.go::extractToken`;
+  expected struct
+  `/home/lnb/Desktop/HA/MatchCoreArena-Server/internal/service/match.go::TeamReportInput`
+  (fields incl. `uuid` `binding:"required"` in
+  `/home/lnb/Desktop/HA/MatchCoreArena-Server/internal/service/match.go::ParticipantReport`);
+  processing
+  `/home/lnb/Desktop/HA/MatchCoreArena-Server/internal/service/match.go::Report`
+  (resolveUID, Elo deltas, `rank_score` update, rankings),
+  `/home/lnb/Desktop/HA/MatchCoreArena-Server/internal/service/match.go::resolveUID`.
 - Commits: `36aa815a`, `620601be`.
 - Not verified: the production `api-url`/token actually deployed (deployment
   config is not in this repo); the relationship of `perf_tweak` to the scoring
