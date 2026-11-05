@@ -28,8 +28,9 @@ This is a statement of verified fact about the fork's scope:
 - The shorthand "the fork only does match-result reporting" is inaccurate; the
   accurate statement is "reporting plus build/platform work, no gameplay
   change."
-- The fork carries large committed binary jars (~96MB of craftbukkit jars) for
-  offline builds — a repository-size cost accepted for build reproducibility.
+- The fork keeps large craftbukkit jars (~96MB) locally at the repository root
+  for offline builds; they are gitignored and not tracked, so clones must
+  supply them out-of-band.
 - Gameplay fixes/features must come from merging upstream; the fork does not
   own gameplay behavior.
 
@@ -43,7 +44,7 @@ This is a statement of verified fact about the fork's scope:
   GameLobbyCountdown) shows only accessor boilerplate + reporting hooks.
 - Reporting code:
   `common/src/main/java/io/github/bedwarsrel/utils/MatchReporter.java::MatchReporter`.
-- Offline-build jars at the repository root: `craftbukkit-1.12.jar`,
-  `craftbukkit-1.8.3.jar`, `craftbukkit-1.8.8.jar`,
+- Offline-build jars at the repository root (local-only, gitignored):
+  `craftbukkit-1.12.jar`, `craftbukkit-1.8.3.jar`, `craftbukkit-1.8.8.jar`,
   `craftbukkit-1.8-R0.1-SNAPSHOT.jar` (~96MB total).
 - Not verified: none material to the scope claim.
