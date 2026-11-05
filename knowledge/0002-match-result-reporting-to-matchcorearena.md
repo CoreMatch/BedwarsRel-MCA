@@ -1,7 +1,6 @@
 # ADR-0002: Match Result Reporting to MatchCoreArena
 
 - **Status**: accepted
-- **Date**: 2026-11-04
 
 ## Context
 
@@ -27,19 +26,16 @@ MatchCoreArena API:
   `members[]`), `duration_seconds`, `started_at`/`finished_at` (ISO-8601 UTC),
   and per member `uuid`, `survival_time`, `kills`, `deaths`, and
   `perf_tweak` (hard-coded `1.0`).
-- Data collection added alongside: game start timestamp + initial team
-  snapshot, and per-player survival time recorded on leave.
+- Supporting data collection: game start timestamp + initial team snapshot,
+  and per-player survival time recorded on leave.
 
 ## Consequences
 
 - The receiving endpoint is `POST /api/matches` on MatchCoreArena-Server, which
   requires the `match:report` scope, resolves `uuid`→`uid`, computes Elo-based
   deltas, and updates `rank_score`/rankings in one transaction. The plugin's
-  field names match the server's expected struct, including the corrected
-  `uuid` string field.
-- The `620601be` fix changed the member identifier from a numeric `uid` (only
-  the high 64 bits of the UUID) to the full `uuid` string — required by the
-  server.
+  field names match the server's expected struct, including the full `uuid`
+  string field that the server requires.
 - Cost/limitation: `perf_tweak` is hard-coded `1.0` (its semantics relative to
   the scoring model are not verified); reporting silently no-ops without a
   configured token, so a misconfigured server produces no errors and no scores.
@@ -76,9 +72,7 @@ MatchCoreArena API:
   (survival time on leave), getters
   `common/src/main/java/io/github/bedwarsrel/game/Game.java::getStartedAt`,
   `common/src/main/java/io/github/bedwarsrel/game/Game.java::getPlayerSurvivalTimes`,
-  `common/src/main/java/io/github/bedwarsrel/game/Game.java::getParticipants`;
-  introduced by `36aa815a`.
-- uuid fix: commit `620601be` (`uid` numeric high-bits → `uuid` full string).
+  `common/src/main/java/io/github/bedwarsrel/game/Game.java::getParticipants`.
 - Receiving side: MatchCoreArena-Server
   `/home/lnb/Desktop/HA/MatchCoreArena-Server/api/router.go::Report`
   (`api.POST("/matches", matchH.Report)` under `/api` auth group
@@ -95,7 +89,6 @@ MatchCoreArena API:
   `/home/lnb/Desktop/HA/MatchCoreArena-Server/internal/service/match.go::Report`
   (resolveUID, Elo deltas, `rank_score` update, rankings),
   `/home/lnb/Desktop/HA/MatchCoreArena-Server/internal/service/match.go::resolveUID`.
-- Commits: `36aa815a`, `620601be`.
 - Not verified: the production `api-url`/token actually deployed (deployment
   config is not in this repo); the relationship of `perf_tweak` to the scoring
   model.
