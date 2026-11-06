@@ -31,12 +31,14 @@ package:
   excluded). Successfully reported ids are persisted in a bounded ledger
   (`ReportLedger`, file `mca-reported-matches.log` in the plugin data folder,
   size `match-reporting.ledger-capacity`); ledgered games are never reported
-  again, including across restarts. The MatchCoreArena endpoint itself does
-  no deduplication, see PENDING-DECISIONS.md item 3.
+  again, including across restarts. The same `game_id` is also sent in the
+  payload, so MatchCoreArena-Server deduplicates re-reports server-side
+  (knowledge 0011); see PENDING-DECISIONS.md item 3.
 - Delivery: a single daemon worker drains a bounded queue
   (`match-reporting.retry.queue-capacity`; overflow is dropped with a
   warning) and POSTs the HA-Contract `POST /api/matches` payload built by
-  `MatchReportPayload` (contract fields only, RFC 3339 UTC timestamps).
+  `MatchReportPayload` (contract fields only, RFC 3339 UTC timestamps, plus
+  the stable `game_id` idempotency key so the server deduplicates re-reports).
   Connect/read timeouts are enforced (`match-reporting.timeout-millis`).
 - Failure classification (`ReportClassifier`): 2xx marks the ledger; 4xx is
   logged with the response body and never retried; 5xx and network failures

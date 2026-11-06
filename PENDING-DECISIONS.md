@@ -13,9 +13,7 @@ the options. Nothing here blocks the current build.
   representable. The contract's `ParticipantDetail.is_draw` is documented as
   "game reports are always false".
 - Options: (a) keep skipping draws (status quo); (b) extend the contract with
-  draw support on the game path (requires HA-Contract + server changes);
-  (c) report draws through `POST /api/matches/virtual` (contract already
-  supports all-draw, but mixes real-game reporting with the virtual source).
+  draw support on the game path (requires HA-Contract + server changes).
 
 ## 2. Map name is collected but not transmitted
 
@@ -28,22 +26,28 @@ the options. Nothing here blocks the current build.
   `TeamReportInput` in HA-Contract and to the server INSERT (column already
   exists), then the plugin only needs to add one payload field.
 
-## 3. Idempotency is plugin-side only
+## 3. Idempotency is plugin-side ledger plus server-side game_id
 
 - Current: a stable `game_id` (name-based UUID over start time, map, match
   type and team/member UUIDs) is recorded in a persistent ledger
   (`plugins/BedwarsRel/mca-reported-matches.log`, bounded by
-  `match-reporting.ledger-capacity`, default 2000). A game whose id is
-  ledgered is never reported again, including across restarts.
-- Why: the settlement endpoint performs no deduplication and the contract has
-  no client-supplied idempotency field; duplicate POSTs settle twice.
+  `match-reporting.ledger-capacity`, default 2000) **and** sent in the
+  `POST /api/matches` payload. A game whose id is ledgered is never reported
+  again, including across restarts.
+- Why: MatchCoreArena-Server honors `game_id` as the idempotency key
+  (knowledge 0011): an identical re-report returns the existing match
+  (HTTP 200, no re-settlement), and a conflicting reuse is rejected with
+  `409 mca_game_id_conflict`. The plugin ledger is a fast-path guard that
+  avoids the network round-trip for already-reported games.
 - Residual risk: if the plugin process dies between the server accepting the
-  report and the ledger write, a restart can re-report once. The window is
-  milliseconds; the consequence is one duplicated settlement.
-- Options: (a) keep plugin-side ledger (status quo); (b) add a
-  `client_match_id` field to `TeamReportInput` plus a unique constraint in
-  MatchCoreArena-Server for true server-side idempotency (HA-Contract +
-  server change; plugin already has the id to send).
+  report and the ledger write, a restart re-sends the same `game_id`; the
+  server now deduplicates it (returns the existing record), so no duplicate
+  settlement occurs. The ledger write still lags the server accept by
+  milliseconds, but the server-side key closes the previous duplicate-settle
+  window.
+- Options: (a) keep both layers (status quo); (b) drop the plugin ledger and
+  rely solely on server-side `game_id` deduplication (simpler, but every
+  restart replays old reports against the server until they 409/200).
 
 ## 4. Offline-mode servers produce unresolvable UUIDs
 

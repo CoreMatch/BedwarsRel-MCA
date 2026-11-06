@@ -51,7 +51,12 @@ public class MatchReportPayloadTest {
     // schema of POST /api/matches has no map field
     assertFalse(json.contains("map_name"));
     assertFalse(json.contains("arena1"));
-    assertFalse(json.contains("game_id"));
+
+    // game_id is the stable server-side idempotency key: present and UUID-shaped
+    assertTrue(json.contains("\"game_id\":\""));
+    int gidStart = json.indexOf("\"game_id\":\"") + "\"game_id\":\"".length();
+    String gid = json.substring(gidStart, json.indexOf('"', gidStart));
+    assertTrue(gid.matches("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"));
   }
 
   @Test

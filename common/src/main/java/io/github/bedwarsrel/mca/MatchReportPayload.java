@@ -10,10 +10,13 @@ import java.util.TimeZone;
  * Serializes a {@link MatchSummary} into the exact JSON body of the
  * HA-Contract {@code POST /api/matches} request ({@code TeamReportInput}).
  *
- * <p>Only contract fields are emitted: {@code match_type}, {@code winner_team},
- * {@code loser_teams}, {@code duration_seconds}, {@code started_at} and
- * {@code finished_at}. The map name is intentionally not sent because the
- * game-report input schema has no map field (see PENDING-DECISIONS.md).
+ * <p>Emitted fields: {@code match_type}, {@code game_id} (server-side
+ * idempotency key), {@code winner_team}, {@code loser_teams},
+ * {@code duration_seconds}, {@code started_at} and {@code finished_at}. The
+ * map name is intentionally not sent because the game-report input schema has
+ * no map field (see PENDING-DECISIONS.md). {@code game_id} lets the server
+ * reject duplicate settlements (identical re-replays return the existing
+ * record; conflicting reuse is rejected).
  */
 public final class MatchReportPayload {
 
@@ -30,6 +33,8 @@ public final class MatchReportPayload {
     StringBuilder sb = new StringBuilder(512);
     sb.append('{');
     appendStringField(sb, "match_type", summary.getMatchType());
+    sb.append(',');
+    appendStringField(sb, "game_id", summary.getGameId());
     sb.append(',');
     sb.append("\"winner_team\":");
     appendTeam(sb, winner);
