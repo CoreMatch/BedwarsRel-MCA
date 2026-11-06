@@ -7,7 +7,16 @@ the options. Nothing here blocks the current build.
 (Former items 1 "draw results cannot be reported" and 2 "map name not
 transmitted" were resolved by HA-Contract v1.4.0 and are no longer pending:
 the plugin now reports all-draw games through the unified `teams` shape and
-sends `map_name`.)
+sends `map_name`. Former item 6 "dead-letter records need a recovery path" is
+resolved by the administrative commands `/mca deadletter` and
+`/mca replay [n]` (also reachable as `/bw mca`): `deadletter` prints the
+number of undelivered records; `replay` re-enqueues the most recent records,
+at most 50 per invocation (default 10), stops early when the delivery queue
+is full and skips malformed entries. Handled records are removed from the
+store, which stays bounded by `match-reporting.dead-letter-capacity` (default
+200, oldest entries evicted first). Replay is safe because
+MatchCoreArena-Server treats `game_id` as the idempotency key: an identical
+re-report returns the existing match without settling it again.)
 
 ## 3. Idempotency is plugin-side ledger plus server-side game_id
 
@@ -60,21 +69,6 @@ sends `map_name`.)
   (b) remove form B from the plugin until servers can accept it; (c) make
   the MCA server accept HRPAuth service tokens as OPS credentials (server
   change).
-
-## 6. Dead-letter records need a recovery path
-
-- Current: reports whose retries are exhausted (5xx/network only; 4xx is
-  final) are written to the bounded dead-letter file
-  (`plugins/BedwarsRel/mca-dead-letter.log`, bounded by
-  `match-reporting.dead-letter-capacity`, default 200) as one JSON line per
-  game carrying the timestamp, `game_id`, failure reason and the full report
-  payload. Startup warns when undelivered records exist. Nothing is lost
-  silently; oldest entries are evicted beyond the capacity.
-- Open: there is no replay mechanism — recovery today means manually
-  resubmitting the stored payload (any replay is safe: the server
-  deduplicates identical `game_id` payloads).
-- Options: (a) keep manual inspection/replay (status quo); (b) add an admin
-  command or tool that replays dead-letter entries against the endpoint.
 
 ## 7. Mid-game leavers report zeroed per-game stats
 
