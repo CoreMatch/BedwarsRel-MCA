@@ -51,6 +51,15 @@ package:
   dead-letter file (`DeadLetterStore`, `mca-dead-letter.log` in the plugin
   data folder, size `match-reporting.dead-letter-capacity`) carrying
   timestamp, `game_id`, failure reason and the full payload.
+- Dead-letter recovery: `/mca deadletter` prints the number of undelivered
+  records; `/mca replay [n]` (default 10, capped at 50, also reachable as
+  `/bw mca`) re-enqueues the most recent records, stops when the delivery
+  queue is full and discards malformed entries. Handled records are removed
+  from the store, which stays bounded by
+  `match-reporting.dead-letter-capacity` (default 200). A failed replay is
+  written back to the dead-letter file after its retries are exhausted, and
+  a successful replay cannot settle twice: it re-sends the same `game_id`,
+  which the server resolves to the existing record (HTTP 200).
 - Startup self-check: `MatchReportService.init` logs one status line —
   enabled flag, endpoint, credential form (never the secret), retry
   parameters, ledger entry count and dead-letter entry count — and warns
@@ -156,9 +165,20 @@ package:
   (`mca_user_not_found`, `mca_user_not_provisioned`, `oauth_hrpauth_down`,
   `oauth_insufficient_scope`, `mca_report_inconsistent`,
   `mca_game_id_conflict`).
-- Open items: `PENDING-DECISIONS.md` (ledger vs. server-side dedup layering,
-  offline UUIDs, client_credentials vs. OPS gate, dead-letter replay
-  tooling, leaver stats).
+- Dead-letter administration:
+  `common/src/main/resources/plugin.yml::mca`
+  (`/mca [deadletter|replay [n]]`, permission `bw.mca`),
+  `common/src/main/java/io/github/bedwarsrel/commands/McaCommand.java::handle`
+  (sub-command dispatch, default 10, cap 50, queue-full stop),
+  `common/src/main/java/io/github/bedwarsrel/mca/MatchReportService.java::replayDeadLetters`
+  (most-recent selection, cap, malformed skip, store removal),
+  `common/src/main/java/io/github/bedwarsrel/mca/DeadLetterStore.java::removeFirst`
+  (bounded store trimming),
+  `common/src/test/java/io/github/bedwarsrel/mca/DeadLetterReplayTest.java::DeadLetterReplayTest`
+  (replay coverage).
+- Open items: `PENDING-DECISIONS.md` items 3–5 and 7 (ledger vs. server-side
+  dedup layering, offline UUIDs, client_credentials vs. OPS gate, leaver
+  stats). Dead-letter replay is implemented, not pending.
 - Not verified: the production `api-url`/token actually deployed (deployment
   config is not in this repo); the relationship of `perf_tweak` to the
   scoring model.
