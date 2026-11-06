@@ -7,16 +7,15 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 /**
- * Serializes a {@link MatchSummary} into the exact JSON body of the
- * HA-Contract {@code POST /api/matches} request ({@code TeamReportInput}).
+ * Serializes a {@link MatchSummary} into the JSON body of the HA-Contract
+ * v1.4.0 {@code POST /api/matches} request ({@code TeamReportInput},
+ * unified shape).
  *
- * <p>Emitted fields: {@code match_type}, {@code game_id} (server-side
- * idempotency key), {@code winner_team}, {@code loser_teams},
- * {@code duration_seconds}, {@code started_at} and {@code finished_at}. The
- * map name is intentionally not sent because the game-report input schema has
- * no map field (see PENDING-DECISIONS.md). {@code game_id} lets the server
- * reject duplicate settlements (identical re-replays return the existing
- * record; conflicting reuse is rejected).
+ * <p>Sent fields: {@code match_type}, {@code teams} (each with
+ * {@code result} win/lose/draw), {@code duration_seconds}, {@code map_name},
+ * {@code game_id} (server-side idempotency key), {@code source} ("game"),
+ * {@code started_at} and {@code finished_at}. A game without a winner is
+ * reported as an all-draw match (settled with S=0.5 server-side).
  */
 public final class MatchReportPayload {
 
@@ -24,31 +23,28 @@ public final class MatchReportPayload {
   }
 
   public static String toJson(MatchSummary summary) {
-    MatchSummary.TeamResult winner = summary.getWinnerTeam();
-    if (winner == null) {
-      throw new IllegalArgumentException(
-          "cannot serialize a match without a winner for POST /api/matches");
-    }
+    boolean hasWinner = summary.getWinnerTeam() != null;
 
     StringBuilder sb = new StringBuilder(512);
     sb.append('{');
     appendStringField(sb, "match_type", summary.getMatchType());
     sb.append(',');
-    appendStringField(sb, "game_id", summary.getGameId());
-    sb.append(',');
-    sb.append("\"winner_team\":");
-    appendTeam(sb, winner);
-    sb.append(',');
-    sb.append("\"loser_teams\":[");
-    List<MatchSummary.TeamResult> losers = summary.getLoserTeams();
-    for (int i = 0; i < losers.size(); i++) {
+    sb.append("\"teams\":[");
+    List<MatchSummary.TeamResult> teams = summary.getTeams();
+    for (int i = 0; i < teams.size(); i++) {
       if (i > 0) {
         sb.append(',');
       }
-      appendTeam(sb, losers.get(i));
+      appendTeam(sb, teams.get(i), hasWinner);
     }
     sb.append("],");
     appendNumberField(sb, "duration_seconds", summary.getDurationSeconds());
+    sb.append(',');
+    appendStringField(sb, "map_name", summary.getMapName());
+    sb.append(',');
+    appendStringField(sb, "game_id", summary.getGameId());
+    sb.append(',');
+    appendStringField(sb, "source", "game");
     sb.append(',');
     appendStringField(sb, "started_at", formatRfc3339Utc(summary.getStartedAtMillis()));
     sb.append(',');
@@ -57,9 +53,12 @@ public final class MatchReportPayload {
     return sb.toString();
   }
 
-  private static void appendTeam(StringBuilder sb, MatchSummary.TeamResult team) {
+  private static void appendTeam(StringBuilder sb, MatchSummary.TeamResult team,
+      boolean hasWinner) {
     sb.append('{');
     appendStringField(sb, "team_id", team.getTeamId());
+    sb.append(',');
+    appendStringField(sb, "result", resultOf(team, hasWinner));
     sb.append(',');
     appendNumberField(sb, "initial_count", team.getInitialCount());
     sb.append(',');
@@ -74,6 +73,14 @@ public final class MatchReportPayload {
       appendParticipant(sb, members.get(i));
     }
     sb.append("]}");
+  }
+
+  private static String resultOf(MatchSummary.TeamResult team, boolean hasWinner) {
+    if (team.isWinner()) {
+      return "win";
+    }
+    // a game without any winner is reported as an all-draw match
+    return hasWinner ? "lose" : "draw";
   }
 
   private static void appendParticipant(StringBuilder sb, MatchSummary.Participant member) {

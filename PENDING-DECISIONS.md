@@ -4,27 +4,10 @@ Items where the match-reporting implementation made a conservative default
 choice and needs an author decision. Each item lists the current behavior and
 the options. Nothing here blocks the current build.
 
-## 1. Draw results cannot be reported on the game path
-
-- Current: a game that ends without a winner is skipped with a warning log.
-- Why: HA-Contract `POST /api/matches` (`TeamReportInput`) requires
-  `winner_team`; MatchCoreArena-Server validation rejects an empty winner and
-  its settlement code divides by `initial_count`, so a draw payload is not
-  representable. The contract's `ParticipantDetail.is_draw` is documented as
-  "game reports are always false".
-- Options: (a) keep skipping draws (status quo); (b) extend the contract with
-  draw support on the game path (requires HA-Contract + server changes).
-
-## 2. Map name is collected but not transmitted
-
-- Current: the summary carries `map_name` (region name) and logs it, but the
-  JSON payload omits it.
-- Why: `TeamReportInput` has no `map_name` field; the server's game-report
-  INSERT does not write the existing `matches.map_name` column (the virtual
-  path does). Sending the field would be silently ignored.
-- Options: (a) keep omitting (status quo); (b) add `map_name` to
-  `TeamReportInput` in HA-Contract and to the server INSERT (column already
-  exists), then the plugin only needs to add one payload field.
+(Former items 1 "draw results cannot be reported" and 2 "map name not
+transmitted" were resolved by HA-Contract v1.4.0 and are no longer pending:
+the plugin now reports all-draw games through the unified `teams` shape and
+sends `map_name`.)
 
 ## 3. Idempotency is plugin-side ledger plus server-side game_id
 
@@ -60,32 +43,38 @@ the options. Nothing here blocks the current build.
   using reporting (status quo); (b) add a configurable UUID source or a
   name→HA-UUID mapping lookup in the plugin.
 
-## 5. client_credentials form vs. server scope check
+## 5. client_credentials form vs. the v1.4.0 OPS gate
 
 - Current: the plugin supports both credential forms — static service token
   (recommended, matches MatchCoreArena-Server `config/tokens.yaml`) and an
   OAuth2 `client_credentials` exchange (`credentials.token-url/client-id/
   client-secret`).
-- Why: MatchCoreArena-Server's token verifier hard-codes the scope set
-  `["user.read"]` for any HRPAuth-verified token
-  (`internal/auth/verifier.go::Verify`), so a token obtained via
-  `client_credentials` currently fails the `match:report` scope check with
-  `403 oauth_insufficient_scope`. Only `tokens.yaml` service tokens (and the
-  maintenance token) pass today.
-- Options: (a) keep both plugin forms and use form A in deployments
-  (status quo); (b) make the MCA server honor service-token scopes returned
-  by HRPAuth so form B works end-to-end (server change).
+- Why: HA-Contract v1.4.0 requires an **OPS-level credential** for reporting
+  (maintenance token or a `tokens.yaml` service token) and rejects ordinary
+  tokens with `403 oauth_insufficient_scope` even when the scope is present.
+  An HRPAuth-issued `client_credentials` access token is verified through the
+  HRPAuth path (scope set hard-coded to `user.read` in
+  `internal/auth/verifier.go::Verify`) and is not an OPS credential, so form
+  B is rejected by current servers.
+- Options: (a) keep both plugin forms and deploy form A (status quo);
+  (b) remove form B from the plugin until servers can accept it; (c) make
+  the MCA server accept HRPAuth service tokens as OPS credentials (server
+  change).
 
-## 6. Reports that exhaust retries are dropped, not spilled
+## 6. Dead-letter records need a recovery path
 
-- Current: after `match-reporting.retry.max-attempts` failed attempts
-  (5xx/network only; 4xx is never retried) the report is dropped with a
-  SEVERE log naming the `game_id`. The game is not ledgered, so a later
-  server restart does not re-send it either (the summary only exists at
-  game over).
-- Options: (a) accept the drop with loud logging (status quo); (b) persist a
-  dead-letter file of failed payloads that an admin tool or a future plugin
-  version can replay.
+- Current: reports whose retries are exhausted (5xx/network only; 4xx is
+  final) are written to the bounded dead-letter file
+  (`plugins/BedwarsRel/mca-dead-letter.log`, bounded by
+  `match-reporting.dead-letter-capacity`, default 200) as one JSON line per
+  game carrying the timestamp, `game_id`, failure reason and the full report
+  payload. Startup warns when undelivered records exist. Nothing is lost
+  silently; oldest entries are evicted beyond the capacity.
+- Open: there is no replay mechanism — recovery today means manually
+  resubmitting the stored payload (any replay is safe: the server
+  deduplicates identical `game_id` payloads).
+- Options: (a) keep manual inspection/replay (status quo); (b) add an admin
+  command or tool that replays dead-letter entries against the endpoint.
 
 ## 7. Mid-game leavers report zeroed per-game stats
 

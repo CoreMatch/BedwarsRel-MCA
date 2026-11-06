@@ -297,6 +297,8 @@ public class ConfigUpdater {
     BedwarsRel.getInstance().getConfig().addDefault("match-reporting.retry.delay-millis", 2000);
     BedwarsRel.getInstance().getConfig().addDefault("match-reporting.retry.queue-capacity", 64);
     BedwarsRel.getInstance().getConfig().addDefault("match-reporting.ledger-capacity", 2000);
+    BedwarsRel.getInstance().getConfig()
+        .addDefault("match-reporting.dead-letter-capacity", 200);
     // </mca-match-reporting>
   }
 }

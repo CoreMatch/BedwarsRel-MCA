@@ -3,7 +3,6 @@ package io.github.bedwarsrel.mca;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import io.github.bedwarsrel.mca.MatchSummaryBuilder.ParticipantInput;
 import io.github.bedwarsrel.mca.MatchSummaryBuilder.TeamInput;
@@ -22,23 +21,19 @@ public class MatchReportPayloadTest {
   }
 
   @Test
-  public void payloadCarriesExactlyTheContractFields() {
+  public void payloadCarriesTheUnifiedContractShape() {
     long started = 1_700_000_000_000L; // 2023-11-14T22:13:20Z
     long finished = started + 90_000L;
 
-    String json = MatchReportPayload.toJson(summary("arena1", started, finished));
+    MatchSummary summary = summary("arena1", started, finished);
+    String json = MatchReportPayload.toJson(summary);
 
     assertTrue(json.contains("\"match_type\":\"2v2\""));
-    assertTrue(json.contains("\"duration_seconds\":90"));
-    assertTrue(json.contains("\"started_at\":\"2023-11-14T22:13:20Z\""));
-    assertTrue(json.contains("\"finished_at\":\"2023-11-14T22:14:50Z\""));
-
-    // winner_team / loser_teams structure
-    int winnerStart = json.indexOf("\"winner_team\":{");
-    assertTrue(winnerStart >= 0);
-    assertTrue(json.contains("\"loser_teams\":["));
+    assertTrue(json.contains("\"teams\":["));
     assertTrue(json.contains("\"team_id\":\"red\""));
+    assertTrue(json.contains("\"result\":\"win\""));
     assertTrue(json.contains("\"team_id\":\"blue\""));
+    assertTrue(json.contains("\"result\":\"lose\""));
     assertTrue(json.contains("\"initial_count\":2"));
     assertTrue(json.contains("\"alive_count\":1"));
     assertTrue(json.contains("\"uuid\":\"11111111-1111-3111-8111-111111111111\""));
@@ -46,26 +41,65 @@ public class MatchReportPayloadTest {
     assertTrue(json.contains("\"kills\":3"));
     assertTrue(json.contains("\"deaths\":1"));
     assertTrue(json.contains("\"perf_tweak\":1.0"));
+    assertTrue(json.contains("\"duration_seconds\":90"));
+    assertTrue(json.contains("\"started_at\":\"2023-11-14T22:13:20Z\""));
+    assertTrue(json.contains("\"finished_at\":\"2023-11-14T22:14:50Z\""));
 
-    // the map name is aggregated but must not be sent: the contract input
-    // schema of POST /api/matches has no map field
-    assertFalse(json.contains("map_name"));
-    assertFalse(json.contains("arena1"));
+    // v1.4.0 alignment: map name and the idempotency key are transmitted,
+    // the report is marked as game-sourced
+    assertTrue(json.contains("\"map_name\":\"arena1\""));
+    assertTrue(json.contains("\"game_id\":\"" + summary.getGameId() + "\""));
+    assertTrue(json.contains("\"source\":\"game\""));
 
-    // game_id is the stable server-side idempotency key: present and UUID-shaped
-    assertTrue(json.contains("\"game_id\":\""));
-    int gidStart = json.indexOf("\"game_id\":\"") + "\"game_id\":\"".length();
-    String gid = json.substring(gidStart, json.indexOf('"', gidStart));
-    assertTrue(gid.matches("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"));
+    // the legacy shape must not be used anymore
+    assertFalse(json.contains("winner_team"));
+    assertFalse(json.contains("loser_teams"));
   }
 
   @Test
-  public void winnerTeamComesBeforeLoserTeams() {
+  public void winningTeamComesFirstInTheTeamsArray() {
     String json = MatchReportPayload.toJson(summary("m", 1000L, 2000L));
-    assertTrue(json.indexOf("\"winner_team\"") < json.indexOf("\"loser_teams\""));
-    // the winner block contains the red team id
-    int winnerBlockEnd = json.indexOf("\"loser_teams\"");
-    assertTrue(json.substring(0, winnerBlockEnd).contains("\"team_id\":\"red\""));
+    int red = json.indexOf("\"team_id\":\"red\"");
+    int blue = json.indexOf("\"team_id\":\"blue\"");
+    assertTrue(red >= 0 && blue >= 0);
+    assertTrue("winner must be listed first", red < blue);
+  }
+
+  @Test
+  public void gameWithoutWinnerIsReportedAsAllDraw() {
+    MatchSummary draw = MatchSummaryBuilder.build("m", 1000L, 61_000L, Arrays.asList(
+        new TeamInput("red", 1, 0, false, Arrays.asList(
+            new ParticipantInput("u1", "n1", 60, 1, 1))),
+        new TeamInput("blue", 1, 0, false, Arrays.asList(
+            new ParticipantInput("u2", "n2", 55, 1, 1)))));
+
+    String json = MatchReportPayload.toJson(draw);
+
+    assertFalse(json.contains("\"result\":\"win\""));
+    assertFalse(json.contains("\"result\":\"lose\""));
+    // both teams are draws
+    int first = json.indexOf("\"result\":\"draw\"");
+    int second = json.indexOf("\"result\":\"draw\"", first + 1);
+    assertTrue(first >= 0);
+    assertTrue(second > first);
+  }
+
+  @Test
+  public void durationMatchesTheTruncatedTimestamps() {
+    // started 500ms after an epoch second, finished 89.7s later: the raw
+    // millisecond difference floors to 89, but the RFC 3339 timestamps
+    // (second-truncated) differ by 90 — and HA-Contract v1.4.0 rejects a
+    // positive duration_seconds that disagrees with the timestamp diff.
+    long started = 1_700_000_001_500L;
+    long finished = started + 89_700L;
+
+    MatchSummary summary = summary("m", started, finished);
+    String json = MatchReportPayload.toJson(summary);
+
+    long timestampDiff = finished / 1000L - started / 1000L;
+    assertEquals(90L, timestampDiff);
+    assertEquals(89L, (finished - started) / 1000L); // the naive value would be wrong
+    assertTrue(json.contains("\"duration_seconds\":90"));
   }
 
   @Test
@@ -94,20 +128,5 @@ public class MatchReportPayloadTest {
   public void rfc3339UsesUtc() {
     assertEquals("1970-01-01T00:00:00Z", MatchReportPayload.formatRfc3339Utc(0L));
     assertEquals("2023-11-14T22:13:20Z", MatchReportPayload.formatRfc3339Utc(1_700_000_000_000L));
-  }
-
-  @Test
-  public void matchWithoutWinnerIsRejected() {
-    MatchSummary draw = MatchSummaryBuilder.build("m", 1000L, 2000L, Arrays.asList(
-        new TeamInput("red", 1, 0, false, Arrays.asList(
-            new ParticipantInput("u1", "n1", 1, 0, 0))),
-        new TeamInput("blue", 1, 0, false, Arrays.asList(
-            new ParticipantInput("u2", "n2", 1, 0, 0)))));
-    try {
-      MatchReportPayload.toJson(draw);
-      fail("expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-      // expected: POST /api/matches requires a winner_team
-    }
   }
 }

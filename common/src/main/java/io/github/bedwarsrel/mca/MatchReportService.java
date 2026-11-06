@@ -28,8 +28,10 @@ import java.util.logging.Logger;
  *   <li>4xx: logged with the response body and never retried (the server
  *       rejected the report for a reason retrying cannot fix).</li>
  *   <li>5xx / network failure: retried with exponential backoff up to
- *       {@code max-attempts}; afterwards the report is dropped with an
- *       error log.</li>
+ *       {@code max-attempts}; afterwards the game (id, failure reason and
+ *       full payload) is written to the bounded dead-letter file and an
+ *       error log is emitted. At startup the plugin warns when undelivered
+ *       records exist.</li>
  *   <li>Missing credentials or endpoint: a warning is logged once and the
  *       report is skipped — never an exception into the game flow.</li>
  * </ul>
@@ -37,6 +39,7 @@ import java.util.logging.Logger;
 public final class MatchReportService {
 
   static final String LEDGER_FILE_NAME = "mca-reported-matches.log";
+  static final String DEAD_LETTER_FILE_NAME = "mca-dead-letter.log";
   private static final Charset UTF8 = Charset.forName("UTF-8");
   private static final long MAX_RETRY_DELAY_MILLIS = 30_000L;
 
@@ -44,6 +47,7 @@ public final class MatchReportService {
 
   private final MatchReportConfig config;
   private final ReportLedger ledger;
+  private final DeadLetterStore deadLetter;
   private final TokenProvider tokenProvider;
   private final ReportTransport transport;
   private final Logger logger;
@@ -52,10 +56,11 @@ public final class MatchReportService {
   private final AtomicBoolean skipWarningLogged = new AtomicBoolean(false);
   private volatile boolean running = true;
 
-  MatchReportService(MatchReportConfig config, ReportLedger ledger, TokenProvider tokenProvider,
-      ReportTransport transport, Logger logger) {
+  MatchReportService(MatchReportConfig config, ReportLedger ledger, DeadLetterStore deadLetter,
+      TokenProvider tokenProvider, ReportTransport transport, Logger logger) {
     this.config = config;
     this.ledger = ledger;
+    this.deadLetter = deadLetter;
     this.tokenProvider = tokenProvider;
     this.transport = transport;
     this.logger = logger;
@@ -77,32 +82,42 @@ public final class MatchReportService {
     shutdown();
 
     if (!config.isEnabled()) {
-      logger.info("MCA match reporting is disabled (match-reporting.enabled=false)");
-      return;
-    }
-    if (config.getApiUrl().isEmpty()) {
-      logger.warning("MCA match reporting is disabled: match-reporting.api-url is not set");
-      return;
-    }
-    if (!config.hasCredentials()) {
-      logger.warning("MCA match reporting is disabled: no credentials configured. Set "
-          + "match-reporting.credentials.service-token (static service token) or the "
-          + "client_credentials triple (token-url/client-id/client-secret)");
+      logger.info("MCA match reporting self-check: enabled=false — reporting is disabled");
       return;
     }
 
     ReportLedger ledger = new ReportLedger(new File(dataFolder, LEDGER_FILE_NAME),
         config.getLedgerCapacity(), logger);
+    DeadLetterStore deadLetter = new DeadLetterStore(new File(dataFolder, DEAD_LETTER_FILE_NAME),
+        config.getDeadLetterCapacity(), logger);
+    String status = config.describe() + ", ledger=" + ledger.size()
+        + " remembered game ids, dead-letter=" + deadLetter.count() + " undelivered records";
+
+    if (config.getApiUrl().isEmpty()) {
+      logger.warning("MCA match reporting self-check: NOT OPERATIONAL (api-url missing) — "
+          + status);
+      return;
+    }
+    if (!config.hasCredentials()) {
+      logger.warning("MCA match reporting self-check: NOT OPERATIONAL (no credentials; set "
+          + "match-reporting.credentials.service-token or the client_credentials triple) — "
+          + status);
+      return;
+    }
+
     TokenProvider tokenProvider = buildTokenProvider(config);
-    MatchReportService service = new MatchReportService(config, ledger, tokenProvider,
+    MatchReportService service = new MatchReportService(config, ledger, deadLetter, tokenProvider,
         new UrlConnectionTransport(), logger);
     service.worker.start();
     instance = service;
 
-    logger.info("MCA match reporting enabled (endpoint=" + config.getApiUrl()
-        + ", credentials=" + (tokenProvider.getKind() == TokenProvider.Kind.SERVICE_TOKEN
-            ? "service token" : "client_credentials")
-        + ", max-attempts=" + config.getMaxAttempts() + ")");
+    logger.info("MCA match reporting self-check: OPERATIONAL — " + status);
+    if (deadLetter.count() > 0) {
+      logger.warning("MCA match reporting: " + deadLetter.count()
+          + " undelivered match report(s) waiting in the dead-letter file "
+          + deadLetter.getFile().getAbsolutePath()
+          + " (retries were exhausted; these games were NOT settled)");
+    }
   }
 
   /** Game-over entry point; safe to call even when reporting is not initialized. */
@@ -142,13 +157,8 @@ public final class MatchReportService {
     if (!this.config.isEnabled()) {
       return;
     }
-    if (winner == null) {
-      // The game-report contract requires winner_team; draws cannot be
-      // expressed on this endpoint (see PENDING-DECISIONS.md).
-      this.logger.warning("MCA match report skipped: the game ended without a winner and the "
-          + "POST /api/matches contract does not accept draw results");
-      return;
-    }
+    // winner == null is a legitimate all-draw game: HA-Contract v1.4.0
+    // accepts it via the unified teams shape and settles with S=0.5.
     if (this.tokenProvider == null) {
       this.warnSkipOnce("MCA match report skipped: no credentials configured");
       return;
@@ -220,6 +230,7 @@ public final class MatchReportService {
     String payload = MatchReportPayload.toJson(summary);
     byte[] body = payload.getBytes(UTF8);
     int maxAttempts = this.config.getMaxAttempts();
+    String lastDetail = "unknown";
 
     for (int attempt = 1; attempt <= maxAttempts && this.running; attempt++) {
       ReportClassifier.Category category;
@@ -251,6 +262,7 @@ public final class MatchReportService {
         detail = e.toString();
       }
 
+      lastDetail = detail;
       if (category == ReportClassifier.Category.CLIENT_ERROR) {
         this.logger.warning("MCA match report rejected by server, not retried (game_id="
             + summary.getGameId() + "): " + detail);
@@ -264,9 +276,12 @@ public final class MatchReportService {
       }
     }
 
+    this.deadLetter.add(summary.getGameId(), lastDetail, payload);
     this.logger.severe("MCA match report dropped after " + maxAttempts + " attempts (game_id="
-        + summary.getGameId() + ", map=" + summary.getMapName() + "). The result was NOT "
-        + "recorded by MatchCoreArena; see PENDING-DECISIONS.md for manual recovery options.");
+        + summary.getGameId() + ", map=" + summary.getMapName() + "); the game and the failure "
+        + "reason were written to the dead-letter file "
+        + this.deadLetter.getFile().getAbsolutePath()
+        + ". The result was NOT settled by MatchCoreArena.");
   }
 
   private void sleepBackoff(int attempt) {

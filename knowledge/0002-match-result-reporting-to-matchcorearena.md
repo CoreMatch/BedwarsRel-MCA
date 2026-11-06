@@ -36,15 +36,25 @@ package:
   (knowledge 0011); see PENDING-DECISIONS.md item 3.
 - Delivery: a single daemon worker drains a bounded queue
   (`match-reporting.retry.queue-capacity`; overflow is dropped with a
-  warning) and POSTs the HA-Contract `POST /api/matches` payload built by
-  `MatchReportPayload` (contract fields only, RFC 3339 UTC timestamps, plus
-  the stable `game_id` idempotency key so the server deduplicates re-reports).
+  warning) and POSTs the HA-Contract v1.4.0 `POST /api/matches` payload
+  built by `MatchReportPayload` in the unified shape: `match_type`, `teams`
+  (each with `result` win/lose/draw), `duration_seconds`, `map_name`,
+  `game_id`, `source` ("game"), RFC 3339 UTC timestamps. `duration_seconds`
+  is derived from the same second-truncated values as the timestamps
+  (v1.4.0 rejects mismatches with `400 mca_report_inconsistent`).
   Connect/read timeouts are enforced (`match-reporting.timeout-millis`).
-- Failure classification (`ReportClassifier`): 2xx marks the ledger; 4xx is
-  logged with the response body and never retried; 5xx and network failures
-  are retried with exponential backoff up to
-  `match-reporting.retry.max-attempts`, then dropped with a SEVERE log
-  (PENDING-DECISIONS.md item 6).
+- Failure classification (`ReportClassifier`): 2xx marks the ledger (200 is
+  the server's idempotent replay of an identical `game_id`); 4xx is logged
+  with the response body and never retried; 5xx and network failures are
+  retried with exponential backoff up to
+  `match-reporting.retry.max-attempts`, then written to the bounded
+  dead-letter file (`DeadLetterStore`, `mca-dead-letter.log` in the plugin
+  data folder, size `match-reporting.dead-letter-capacity`) carrying
+  timestamp, `game_id`, failure reason and the full payload.
+- Startup self-check: `MatchReportService.init` logs one status line —
+  enabled flag, endpoint, credential form (never the secret), retry
+  parameters, ledger entry count and dead-letter entry count — and warns
+  when undelivered dead-letter records exist.
 - Credentials (`TokenProvider`), read from `match-reporting.*` config:
   - form A — static service token (`credentials.service-token`, or the legacy
     `access-token` key) registered in MatchCoreArena-Server
@@ -56,16 +66,21 @@ package:
   Missing endpoint or credentials disable reporting with a warning; the
   placeholder `your-access-token-here` counts as missing. Reporting never
   throws into the game flow.
-- Games without a winner (draw) are skipped with a warning: the game-report
-  contract requires `winner_team` (PENDING-DECISIONS.md item 1).
+- Games without a winner are reported as all-draw matches (every team
+  `result` "draw"); v1.4.0 settles them with S=0.5 against the pooled
+  opponent average.
 
 ## Consequences
 
-- The receiving endpoint is `POST /api/matches` on MatchCoreArena-Server,
-  which requires the `match:report` scope, resolves `uuid`→HRPAuth UID,
-  computes Elo-based deltas and updates `rank_score`/rankings in one
-  transaction. The payload matches the server's `TeamReportInput` struct
-  exactly; unknown fields would be ignored, so none are sent.
+- The receiving endpoint is `POST /api/matches` on MatchCoreArena-Server
+  (the single reporting entry point since contract v1.4.0), which requires
+  an OPS-level credential (maintenance token or `tokens.yaml` service token)
+  carrying `match:report`, resolves `uuid`→HRPAuth UID, computes Elo-based
+  deltas and updates `rank_score`/rankings in one transaction. Re-reporting
+  an identical `game_id` replays the existing record (HTTP 200, no
+  re-settlement); a conflicting reuse answers `409 mca_game_id_conflict`.
+  The payload matches the server's `TeamReportInput` struct exactly; unknown
+  fields would be ignored, so none are sent.
 - Participants are identified by `player.getUniqueId()`, the plugin's
   existing identity handling; offline-mode implications are tracked in
   PENDING-DECISIONS.md item 4.
@@ -89,14 +104,18 @@ package:
   (idempotency key),
   `common/src/main/java/io/github/bedwarsrel/mca/ReportLedger.java::ReportLedger`
   (persistent ledger),
+  `common/src/main/java/io/github/bedwarsrel/mca/DeadLetterStore.java::DeadLetterStore`
+  (bounded dead letter for exhausted reports),
   `common/src/main/java/io/github/bedwarsrel/mca/MatchReportPayload.java::toJson`
-  (contract payload),
+  (unified v1.4.0 payload),
   `common/src/main/java/io/github/bedwarsrel/mca/ReportClassifier.java::classifyStatus`
   (4xx no-retry / 5xx+network retry),
   `common/src/main/java/io/github/bedwarsrel/mca/TokenProvider.java::TokenProvider`
   (service token + client_credentials forms),
   `common/src/main/java/io/github/bedwarsrel/mca/MatchReportConfig.java::load`
-  (config + legacy `access-token` fallback).
+  (config + legacy `access-token` fallback),
+  `common/src/main/java/io/github/bedwarsrel/mca/MatchReportConfig.java::describe`
+  (secret-masked self-check rendering).
 - Trigger:
   `common/src/main/java/io/github/bedwarsrel/game/GameCycle.java::runGameOver`
   (call after non-cancelled `BedwarsGameOverEvent`); lifecycle wiring
@@ -124,19 +143,22 @@ package:
   (tokens.yaml lookup; HRPAuth-verified tokens get scope `user.read` only —
   PENDING-DECISIONS.md item 5);
   expected struct
-  `/home/lnb/Desktop/HA/MatchCoreArena-Server/internal/service/match.go::TeamReportInput`;
-  settlement without deduplication
+  `/home/lnb/Desktop/HA/MatchCoreArena-Server/internal/service/match.go::TeamReportInput`
+  (unified reporting incl. `game_id`/`map_name` since server `bbee38d`);
+  settlement with `game_id` idempotency
   `/home/lnb/Desktop/HA/MatchCoreArena-Server/internal/service/match.go::Report`.
-- Contract: HA-Contract
+- Contract: HA-Contract v1.4.0
   `/home/lnb/Desktop/HA/HA-Contract/docs/api/openapi/matchcorearena-business.yaml`
-  (path `/api/matches`, schemas `TeamReportInput`/`TeamReportInfo`/
-  `ParticipantReport`) and
+  (path `/api/matches` single entry point, schemas `TeamReportInput`/
+  `TeamReportInfo`/`ParticipantReport`, `game_id` idempotency, all-draw
+  S=0.5) and
   `/home/lnb/Desktop/HA/HA-Contract/docs/api/error-codes.md`
   (`mca_user_not_found`, `mca_user_not_provisioned`, `oauth_hrpauth_down`,
-  `oauth_insufficient_scope`).
-- Open items: `PENDING-DECISIONS.md` (draws, map_name, server-side
-  idempotency, offline UUIDs, client_credentials scope, dead letter, leaver
-  stats).
+  `oauth_insufficient_scope`, `mca_report_inconsistent`,
+  `mca_game_id_conflict`).
+- Open items: `PENDING-DECISIONS.md` (ledger vs. server-side dedup layering,
+  offline UUIDs, client_credentials vs. OPS gate, dead-letter replay
+  tooling, leaver stats).
 - Not verified: the production `api-url`/token actually deployed (deployment
   config is not in this repo); the relationship of `perf_tweak` to the
   scoring model.

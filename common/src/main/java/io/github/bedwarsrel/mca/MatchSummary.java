@@ -132,8 +132,14 @@ public final class MatchSummary {
     return this.finishedAtMillis;
   }
 
+  /**
+   * Duration in whole seconds, derived from the same second-truncated
+   * values used for the RFC 3339 timestamps: HA-Contract v1.4.0 rejects a
+   * positive {@code duration_seconds} that disagrees with
+   * {@code finished_at - started_at} (400 mca_report_inconsistent).
+   */
   public int getDurationSeconds() {
-    return (int) Math.max(0L, (this.finishedAtMillis - this.startedAtMillis) / 1000L);
+    return (int) Math.max(0L, this.finishedAtMillis / 1000L - this.startedAtMillis / 1000L);
   }
 
   /** All teams: the winning team first (if any), then losers sorted by team id. */

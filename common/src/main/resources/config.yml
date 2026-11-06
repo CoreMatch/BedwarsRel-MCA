@@ -1011,3 +1011,7 @@ match-reporting:
   # (duplicate reports of a remembered game are skipped)
   # type: integer
   ledger-capacity: 2000
+  # How many exhausted (undeliverable) reports are kept in the dead-letter
+  # file (mca-dead-letter.log); oldest entries are evicted beyond this
+  # type: integer
+  dead-letter-capacity: 200

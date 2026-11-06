@@ -27,6 +27,7 @@ public final class MatchReportConfig {
   public static final long DEFAULT_RETRY_DELAY_MILLIS = 2000L;
   public static final int DEFAULT_QUEUE_CAPACITY = 64;
   public static final int DEFAULT_LEDGER_CAPACITY = 2000;
+  public static final int DEFAULT_DEAD_LETTER_CAPACITY = 200;
   public static final String DEFAULT_SCOPE = "match:report";
   static final String LEGACY_TOKEN_PLACEHOLDER = "your-access-token-here";
 
@@ -37,6 +38,7 @@ public final class MatchReportConfig {
   private final long retryDelayMillis;
   private final int queueCapacity;
   private final int ledgerCapacity;
+  private final int deadLetterCapacity;
   private final String serviceToken;
   private final String tokenUrl;
   private final String clientId;
@@ -44,8 +46,8 @@ public final class MatchReportConfig {
   private final String scope;
 
   public MatchReportConfig(boolean enabled, String apiUrl, int timeoutMillis, int maxAttempts,
-      long retryDelayMillis, int queueCapacity, int ledgerCapacity, String serviceToken,
-      String tokenUrl, String clientId, String clientSecret, String scope) {
+      long retryDelayMillis, int queueCapacity, int ledgerCapacity, int deadLetterCapacity,
+      String serviceToken, String tokenUrl, String clientId, String clientSecret, String scope) {
     this.enabled = enabled;
     this.apiUrl = apiUrl == null ? "" : apiUrl.trim();
     this.timeoutMillis = Math.max(100, timeoutMillis);
@@ -53,6 +55,7 @@ public final class MatchReportConfig {
     this.retryDelayMillis = Math.max(0L, retryDelayMillis);
     this.queueCapacity = Math.max(1, queueCapacity);
     this.ledgerCapacity = Math.max(1, ledgerCapacity);
+    this.deadLetterCapacity = Math.max(1, deadLetterCapacity);
     this.serviceToken = serviceToken == null ? "" : serviceToken.trim();
     this.tokenUrl = tokenUrl == null ? "" : tokenUrl.trim();
     this.clientId = clientId == null ? "" : clientId.trim();
@@ -69,7 +72,7 @@ public final class MatchReportConfig {
     if (section == null) {
       return new MatchReportConfig(DEFAULT_ENABLED, DEFAULT_API_URL, DEFAULT_TIMEOUT_MILLIS,
           DEFAULT_MAX_ATTEMPTS, DEFAULT_RETRY_DELAY_MILLIS, DEFAULT_QUEUE_CAPACITY,
-          DEFAULT_LEDGER_CAPACITY, "", "", "", "", DEFAULT_SCOPE);
+          DEFAULT_LEDGER_CAPACITY, DEFAULT_DEAD_LETTER_CAPACITY, "", "", "", "", DEFAULT_SCOPE);
     }
 
     String serviceToken = section.getString("credentials.service-token", "");
@@ -90,6 +93,7 @@ public final class MatchReportConfig {
         section.getLong("retry.delay-millis", DEFAULT_RETRY_DELAY_MILLIS),
         section.getInt("retry.queue-capacity", DEFAULT_QUEUE_CAPACITY),
         section.getInt("ledger-capacity", DEFAULT_LEDGER_CAPACITY),
+        section.getInt("dead-letter-capacity", DEFAULT_DEAD_LETTER_CAPACITY),
         serviceToken,
         section.getString("credentials.token-url", ""),
         section.getString("credentials.client-id", ""),
@@ -123,6 +127,10 @@ public final class MatchReportConfig {
 
   public int getLedgerCapacity() {
     return this.ledgerCapacity;
+  }
+
+  public int getDeadLetterCapacity() {
+    return this.deadLetterCapacity;
   }
 
   public String getServiceToken() {
@@ -163,5 +171,36 @@ public final class MatchReportConfig {
   /** Reporting can only work with an endpoint and some credential form. */
   public boolean isOperational() {
     return this.enabled && !this.apiUrl.isEmpty() && this.hasCredentials();
+  }
+
+  /**
+   * Renders the configuration state for the startup self-check log.
+   * Secrets (service token, client secret) are never included — only their
+   * presence and credential form are shown.
+   */
+  public String describe() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("enabled=").append(this.enabled);
+    sb.append(", endpoint=").append(this.apiUrl.isEmpty() ? "<unset>" : this.apiUrl);
+    sb.append(", credentials=").append(this.describeCredentials());
+    sb.append(", timeout=").append(this.timeoutMillis).append("ms");
+    sb.append(", attempts=").append(this.maxAttempts);
+    sb.append(", retry-delay=").append(this.retryDelayMillis).append("ms");
+    sb.append(", queue-capacity=").append(this.queueCapacity);
+    sb.append(", ledger-capacity=").append(this.ledgerCapacity);
+    sb.append(", dead-letter-capacity=").append(this.deadLetterCapacity);
+    return sb.toString();
+  }
+
+  /** Credential form for logs: which form is active, without any secret. */
+  public String describeCredentials() {
+    if (this.hasServiceToken()) {
+      return "service-token(set)";
+    }
+    if (this.hasClientCredentials()) {
+      return "client_credentials(token-url=" + this.tokenUrl
+          + ", client-id=" + this.clientId + ", client-secret=set)";
+    }
+    return "missing";
   }
 }
