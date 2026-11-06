@@ -43,6 +43,7 @@ import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -54,6 +55,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -852,7 +855,20 @@ public class BedwarsRel extends JavaPlugin {
     this.commands.add(new DebugPasteCommand(this));
     this.commands.add(new ItemsPasteCommand(this));
     this.commands.add(new AutoConnectCommand(this));
+    this.commands.add(new McaCommand(this));
     this.getCommand("bw").setExecutor(executor);
+
+    // top-level /mca command (aliases the /bw mca sub-command)
+    if (this.getCommand("mca") != null) {
+      this.getCommand("mca").setExecutor(new CommandExecutor() {
+        @Override
+        public boolean onCommand(CommandSender sender, Command cmd, String label,
+            String[] args) {
+          ArrayList<String> arguments = new ArrayList<String>(Arrays.asList(args));
+          return McaCommand.handle(sender, arguments);
+        }
+      });
+    }
   }
 
   private void registerConfigurationClasses() {

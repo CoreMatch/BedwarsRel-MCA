@@ -117,6 +117,26 @@ public final class DeadLetterStore {
     return new ArrayList<String>(this.lines);
   }
 
+  /**
+   * Removes up to {@code count} oldest entries from the store.
+   *
+   * @return the actual number of entries removed
+   */
+  public synchronized int removeFirst(int count) {
+    if (count <= 0) {
+      return 0;
+    }
+    int removed = 0;
+    while (removed < count && !this.lines.isEmpty()) {
+      this.lines.removeFirst();
+      removed++;
+    }
+    if (removed > 0) {
+      this.rewrite();
+    }
+    return removed;
+  }
+
   public File getFile() {
     return this.file;
   }

@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -135,7 +136,8 @@ public final class MatchReportService {
     }
   }
 
-  static synchronized MatchReportService getInstance() {
+  /** Singleton accessor (returns {@code null} when reporting is disabled/not initialized). */
+  public static synchronized MatchReportService getInstance() {
     return instance;
   }
 
@@ -199,6 +201,83 @@ public final class MatchReportService {
   /** Number of summaries currently waiting in the bounded queue. */
   int pendingCount() {
     return this.queue.size();
+  }
+
+  /** Number of undelivered records currently stored in the dead-letter file. */
+  public int deadLetterCount() {
+    return this.deadLetter.count();
+  }
+
+  /** Result of one dead-letter replay attempt. */
+  public static final class ReplayResult {
+    public final int replayed;
+    public final int total;
+    public final boolean queueFull;
+
+    ReplayResult(int replayed, int total, boolean queueFull) {
+      this.replayed = replayed;
+      this.total = total;
+      this.queueFull = queueFull;
+    }
+  }
+
+  /**
+   * Re-enqueues up to {@code maxCount} recently-stored dead-letter records.
+   *
+   * <p>The method is synchronized so that it never races with the delivery
+   * worker on the shared queue: it snapshots the dead-letter list first,
+   * then feeds summaries one by one and stops as soon as the bounded queue
+   * rejects an entry or the requested number is reached. Successfully
+   * replayed records are removed from the store.
+   *
+   * <p>{@code maxCount} is capped at 50 to avoid a single administrative
+   * call flooding the queue unexpectedly.
+   *
+   * @return summary of how many records were replayed, how many were
+   *     eligible in total, and whether the run stopped early because the
+   *     queue was full
+   */
+  public synchronized ReplayResult replayDeadLetters(int maxCount) {
+    int total = this.deadLetter.count();
+    if (total == 0) {
+      return new ReplayResult(0, 0, false);
+    }
+
+    int limit = Math.max(1, Math.min(maxCount, 50));
+    List<String> lines = this.deadLetter.snapshot();
+    // snapshot() is oldest-first; we want the most recent `limit` entries
+    int start = Math.max(0, lines.size() - limit);
+    List<String> selected = lines.subList(start, lines.size());
+
+    int replayed = 0;
+    boolean queueFull = false;
+    for (String line : selected) {
+      MatchReportPayload.DeadLetterEntry entry =
+          MatchReportPayload.parseDeadLetterLine(line);
+      if (entry == null) {
+        this.logger.warning("MCA dead-letter replay skipped: malformed entry, will be removed");
+        replayed++; // count as "handled" so it gets cleaned up
+        continue;
+      }
+      MatchSummary summary = MatchReportPayload.fromJson(entry.payloadJson);
+      if (summary == null) {
+        this.logger.warning("MCA dead-letter replay skipped (game_id=" + entry.gameId
+            + "): payload could not be parsed, will be removed");
+        replayed++;
+        continue;
+      }
+      if (!this.submit(summary)) {
+        queueFull = true;
+        break;
+      }
+      replayed++;
+    }
+
+    if (replayed > 0) {
+      this.deadLetter.removeFirst(replayed);
+    }
+
+    return new ReplayResult(replayed, total, queueFull);
   }
 
   private void runLoop() {
