@@ -963,9 +963,51 @@ player-settings:
   # Player can change that in shop, this is just a default
   old-shop-as-default: false
 
-# Match reporting configuration
+# Match reporting configuration (MatchCoreArena, HA-Contract POST /api/matches)
 match-reporting:
+  # Master switch for reporting finished games to MatchCoreArena
+  # type: boolean
+  enabled: true
   # The API endpoint for reporting match results
+  # type: string
   api-url: "https://api.matchcorearena.com/api/matches"
-  # The access token for authentication
+  # Legacy static bearer token (treated as credentials.service-token).
+  # Keep the placeholder value to leave it unused.
+  # type: string
   access-token: "your-access-token-here"
+  # Connect/read timeout for report requests in milliseconds
+  # type: integer
+  timeout-millis: 5000
+  # Credentials. The service token wins when both forms are configured.
+  # When no credential form is configured, reporting is skipped with a warning.
+  credentials:
+    # Form A: static service token registered in the MatchCoreArena server's
+    # config/tokens.yaml with the match:report scope
+    # type: string
+    service-token: ""
+    # Form B: OAuth2 client_credentials exchange; the fetched access token is
+    # used as the report token and refreshed before expiry
+    # type: string
+    token-url: ""
+    # type: string
+    client-id: ""
+    # type: string
+    client-secret: ""
+    # type: string
+    scope: "match:report"
+  retry:
+    # Total delivery attempts per game (1 disables retries). Only 5xx and
+    # network failures are retried; 4xx rejections are logged and dropped.
+    # type: integer
+    max-attempts: 3
+    # Base delay between retries in milliseconds (doubles per attempt, capped at 30s)
+    # type: integer
+    delay-millis: 2000
+    # Maximum number of games waiting for delivery; further games are dropped
+    # with a warning when the queue is full
+    # type: integer
+    queue-capacity: 64
+  # How many successfully reported game ids are remembered for idempotency
+  # (duplicate reports of a remembered game are skipped)
+  # type: integer
+  ledger-capacity: 2000

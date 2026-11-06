@@ -708,6 +708,7 @@ public class BedwarsRel extends JavaPlugin {
 
   @Override
   public void onDisable() {
+    io.github.bedwarsrel.mca.MatchReportService.shutdown();
     this.stopTimeListener();
     this.gameManager.unloadGames();
 
@@ -793,6 +794,13 @@ public class BedwarsRel extends JavaPlugin {
         this.holographicInteraction.loadHolograms();
       }
     }
+
+    // MCA match result reporting (async, idempotent; degrades to a warning
+    // when the endpoint or credentials are not configured)
+    io.github.bedwarsrel.mca.MatchReportService.init(
+        io.github.bedwarsrel.mca.MatchReportConfig
+            .load(this.getConfig().getConfigurationSection("match-reporting")),
+        this.getDataFolder(), this.getLogger());
   }
 
   private void registerBugsnag() {

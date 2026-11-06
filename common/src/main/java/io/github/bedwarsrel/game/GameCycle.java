@@ -295,7 +295,9 @@ public abstract class GameCycle {
       return;
     }
 
-    io.github.bedwarsrel.utils.MatchReporter.report(this.getGame(), winner);
+    // Snapshot the result synchronously and hand it to the async MCA report
+    // pipeline (idempotent, retried; no-op when reporting is unconfigured).
+    io.github.bedwarsrel.mca.MatchReportService.reportGameEnd(this.getGame(), winner);
 
     this.getGame().stopWorkers();
     this.setEndGameRunning(true);

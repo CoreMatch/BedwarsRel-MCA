@@ -281,5 +281,22 @@ public class ConfigUpdater {
       }
     }
     // </1.3.5>
+
+    // <mca-match-reporting>
+    BedwarsRel.getInstance().getConfig().addDefault("match-reporting.enabled", true);
+    BedwarsRel.getInstance().getConfig().addDefault("match-reporting.timeout-millis", 5000);
+    BedwarsRel.getInstance().getConfig()
+        .addDefault("match-reporting.credentials.service-token", "");
+    BedwarsRel.getInstance().getConfig().addDefault("match-reporting.credentials.token-url", "");
+    BedwarsRel.getInstance().getConfig().addDefault("match-reporting.credentials.client-id", "");
+    BedwarsRel.getInstance().getConfig()
+        .addDefault("match-reporting.credentials.client-secret", "");
+    BedwarsRel.getInstance().getConfig()
+        .addDefault("match-reporting.credentials.scope", "match:report");
+    BedwarsRel.getInstance().getConfig().addDefault("match-reporting.retry.max-attempts", 3);
+    BedwarsRel.getInstance().getConfig().addDefault("match-reporting.retry.delay-millis", 2000);
+    BedwarsRel.getInstance().getConfig().addDefault("match-reporting.retry.queue-capacity", 64);
+    BedwarsRel.getInstance().getConfig().addDefault("match-reporting.ledger-capacity", 2000);
+    // </mca-match-reporting>
   }
 }
