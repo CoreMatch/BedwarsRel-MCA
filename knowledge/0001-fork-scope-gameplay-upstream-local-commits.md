@@ -43,7 +43,7 @@ This is a statement of verified fact about the fork's scope:
   of gameplay files (Game/Team/ResourceSpawner/PlayerStatistic/
   GameLobbyCountdown) shows only accessor boilerplate + reporting hooks.
 - Reporting code:
-  `common/src/main/java/io/github/bedwarsrel/utils/MatchReporter.java::MatchReporter`.
+  `common/src/main/java/io/github/bedwarsrel/mca/MatchReportService.java::MatchReportService`.
 - Offline-build jars at the repository root (local-only, gitignored):
   `craftbukkit-1.12.jar`, `craftbukkit-1.8.3.jar`, `craftbukkit-1.8.8.jar`,
   `craftbukkit-1.8-R0.1-SNAPSHOT.jar` (~96MB total).
