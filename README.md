@@ -18,6 +18,20 @@ BedwarsRel is compatible with `CraftBukkit/Spigot 1.8 - 1.8.8`, `CraftBukkit/Spi
 ## Contributing to BedwarsRel
 If you would like to contribute to this repository, feel free to [fork the repo](https://help.github.com/articles/fork-a-repo/) and then [create a pull request](https://help.github.com/articles/creating-a-pull-request/) to our current `dev` branch. This project uses [Project Lombok](https://projectlombok.org), so you will need to have this [installed in your IDE](https://projectlombok.org/download.html). For code formatting, we recommand using the [Google Java Style](https://google.github.io/styleguide/javaguide.html) ([Eclipse Profile](https://raw.githubusercontent.com/google/styleguide/gh-pages/eclipse-java-google-style.xml)).
 
+## Building
+
+**CI scope warning: a green GitHub Actions run does NOT mean the whole repository builds.**
+
+The GitHub Actions workflow (`.github/workflows/ci.yml`) only builds and tests the `common` module, which carries the full test suite and has no NMS dependencies.
+
+The NMS modules (`v1_8_r1`, `v1_8_r2`, `v1_8_r3`, `v1_12_r1`) — and therefore also the shaded `plugin` module that bundles them — depend on `org.spigotmc:minecraft-server:1.8-SNAPSHOT`, which no longer exists in any public Maven repository, and on CraftBukkit jars that are not committed. **CI does not cover these modules.** To build them locally you must supply the jars by hand:
+
+1. Place the required CraftBukkit jars (`craftbukkit-1.8-R0.1-SNAPSHOT.jar`, `craftbukkit-1.8.3.jar`, `craftbukkit-1.8.8.jar`, `craftbukkit-1.12.jar`) in the repository root.
+2. Run `build/get-dependencies.sh` to install them into your local Maven repository.
+3. Then run a full `mvn package` from the repository root.
+
+Without these manually supplied jars, only `mvn -pl common` builds will succeed.
+
 ## Implementing BedwarsRel
 ```xml
 <dependency>
