@@ -40,6 +40,12 @@ re-report returns the existing match without settling it again.)
 - Options: (a) keep both layers (status quo); (b) drop the plugin ledger and
   rely solely on server-side `game_id` deduplication (simpler, but every
   restart replays old reports against the server until they 409/200).
+- **Settled (2026-11-08, option a)**: keep both layers. The ledger avoids a
+  network round-trip for already-reported games and bounds restart replay;
+  the server-side `game_id` key closes the duplicate-settlement window when
+  the process dies between server accept and ledger write. The layers are
+  complementary; dropping the ledger (b) would replay every historical
+  report against the server on each restart for no gain.
 
 ## 4. Offline-mode servers produce unresolvable UUIDs
 
@@ -51,6 +57,13 @@ re-report returns the existing match without settling it again.)
 - Options: (a) require online mode / Yggdrasil-provided UUIDs for servers
   using reporting (status quo); (b) add a configurable UUID source or a
   name→HA-UUID mapping lookup in the plugin.
+- **Settled (2026-11-08, option a)**: servers using reporting must run
+  online mode / Yggdrasil-provided UUIDs. Offline-mode name-based UUIDs are
+  unresolvable by HRPAuth and the report is typed-rejected with
+  `404 mca_user_not_found` (4xx, no retry), a clear and bounded failure
+  surface. A mapping lookup (b) would introduce a second identity source
+  into the settlement trust boundary; cost outweighs benefit. Document this
+  deployment requirement wherever reporting is configured.
 
 ## 5. client_credentials form vs. the v1.4.0 OPS gate
 
@@ -69,6 +82,14 @@ re-report returns the existing match without settling it again.)
   (b) remove form B from the plugin until servers can accept it; (c) make
   the MCA server accept HRPAuth service tokens as OPS credentials (server
   change).
+- **Settled (2026-11-08, option a)**: keep both credential forms in the
+  plugin; deployments use form A (static service token, matching
+  MatchCoreArena-Server `config/tokens.yaml`). Form B stays as
+  protocol-level compatibility only — current servers reject it with
+  `403 oauth_insufficient_scope` under the HA-Contract v1.4.0 OPS gate.
+  Removing form B (b) or relaxing the server-side OPS gate (c) both touch
+  the credential trust boundary and are out of scope for this batch; revisit
+  if/when servers accept HRPAuth service tokens as OPS credentials.
 
 ## 7. Mid-game leavers report zeroed per-game stats
 
@@ -82,3 +103,10 @@ re-report returns the existing match without settling it again.)
 - Options: (a) accept (status quo, identical to the previous reporter);
   (b) snapshot each participant's current stats at game start or intercept
   `storeStatistic` for mid-game leavers.
+- **Settled (2026-11-08, option a)**: accept zeroed kills/deaths for
+  mid-game leavers (identical semantics to the previous reporter). Win/loss
+  and survival time remain correct and staying players report exact stats.
+  Snapshotting at game start or intercepting `storeStatistic` (b) would
+  change the stats-read timing and diverge from the engine's settlement
+  timing; not adopted now. Reopen as its own item if competitive stat
+  accuracy ever demands it.
