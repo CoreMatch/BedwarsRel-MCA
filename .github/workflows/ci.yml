@@ -1,0 +1,28 @@
+# Minimal Java CI. The NMS modules (v1_8_r1..v1_12_r1) require manually
+# supplied CraftBukkit jars (see build/get-dependencies.sh) that are not
+# committed, so they cannot be built on hosted runners. CI therefore builds
+# and tests the common module, which carries the full test suite and has no
+# NMS dependencies.
+name: Java CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Set up JDK
+      uses: actions/setup-java@v7
+      with:
+        distribution: temurin
+        java-version: 17
+        cache: maven
+
+    - name: Build and test common module
+      run: mvn -B test -pl common --no-transfer-progress
