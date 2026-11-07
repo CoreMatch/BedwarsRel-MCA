@@ -218,6 +218,13 @@
           <target>1.8</target>
         </configuration>
       </plugin>
+      <!-- Pin surefire: newer defaults (3.6.x) reject the JUnit 4.10 used by
+           common's test suite; 3.2.5 keeps the build deterministic. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+      </plugin>
     </plugins>
   </build>
 
