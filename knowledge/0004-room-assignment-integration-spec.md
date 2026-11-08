@@ -1,9 +1,18 @@
-# 0004. Room Assignment Integration Spec (MCA Room Layer) — Not Yet Implemented
+# 0004. Room Assignment Integration Spec (MCA Room Layer) — Implemented
 
 ## Status
-proposed (specification only — no code for this entry exists in this
-repository yet; written per HA-Contract 1.10.0 and MCA room reservations,
-MatchCoreArena-Server knowledge 0019)
+implemented (2026-11-08; written per HA-Contract 1.10.0 and MCA room
+reservations, MatchCoreArena-Server knowledge 0019). The implementation
+lives in `common/src/main/java/io/github/bedwarsrel/mca/RoomAssignmentService.java`
+(join routing, bungee mode only),
+`common/src/main/java/io/github/bedwarsrel/mca/ReportTransport.java::get`
+(GET capability), the `matchmaking_group_id` round trip in
+`common/src/main/java/io/github/bedwarsrel/mca/MatchSummary.java::getMatchmakingGroupId`
+/ `common/src/main/java/io/github/bedwarsrel/mca/MatchReportPayload.java::toJson`,
+and the bungee join hook in
+`common/src/main/java/io/github/bedwarsrel/listener/PlayerListener.java::onJoin`.
+This document keeps the decision record; where prose below says "must be
+added", it has been added.
 
 ## Context
 Delivery is layered: MCA forms matches and reserves a room per formed
@@ -27,7 +36,7 @@ group id back in the match report so MCA can release the reservation.
   `mca/ReportTransport.java` — note `ReportTransport` is POST-only
   today, a GET capability must be added. Result handling MUST return to
   the main thread via `BukkitRunnable` (existing scheduling examples:
-  `game/Game.java::playerJoins` uses `runTaskLater` at L1380/L1405,
+  `common/src/main/java/io/github/bedwarsrel/game/Game.java::playerJoins` uses `runTaskLater` at L1380/L1405,
   `GameLobbyCountdown` is a `runTaskTimer` at `game/Game.java` L1346).
 - Query failure or timeout: degrade to "no assignment" — send the
   player back to the proxy lobby with one readable message; never block
@@ -36,10 +45,10 @@ group id back in the match report so MCA can release the reservation.
 ### 2. Entering the room
 - The MCA `room` value is a BedwarsRel GAME NAME: resolution is
   `BedwarsRel.getInstance().getGameManager().getGame(room)`
-  (`game/GameManager.java::getGame` L51, matches `Game.getName()`,
-  `game/Game.java::getName` L214 — NOT the region name). MCA's static
+  (`common/src/main/java/io/github/bedwarsrel/game/GameManager.java::getGame` L51, matches `Game.getName()`,
+  `common/src/main/java/io/github/bedwarsrel/game/Game.java::getName` L214 — NOT the region name). MCA's static
   inventory must use exactly these names.
-- Join entry point: `game/Game.java::playerJoins(Player)` (L1357) — the
+- Join entry point: `common/src/main/java/io/github/bedwarsrel/game/Game.java::playerJoins` (L1357) — the
   same path `/bw join <game>` uses (`commands/JoinGameCommand.java`
   L21-69, permission level "base").
 - Preconditions enforced by existing code (the spec relies on them, does
@@ -69,11 +78,11 @@ L215-222 is the precedent).
 - When the assignment-driven join succeeds, remember the pair
   (game/room → `group_id` from the assignment response) in plugin
   memory for the lifetime of that game.
-- At game over (`game/GameCycle.java::runGameOver` L290 →
-  `mca/MatchReportService.java::reportGameEnd` L125 → snapshot via
-  `mca/MatchSummaryBuilder.java::fromGame` L152) attach the remembered
+- At game over (`common/src/main/java/io/github/bedwarsrel/game/GameCycle.java::runGameOver` L290 →
+  `common/src/main/java/io/github/bedwarsrel/mca/MatchReportService.java::reportGameEnd` L125 → snapshot via
+  `common/src/main/java/io/github/bedwarsrel/mca/MatchSummaryBuilder.java::fromGame` L152) attach the remembered
   `matchmaking_group_id` so the payload carries it
-  (`mca/MatchReportPayload.java::toJson` — sent fields are listed in its
+  (`common/src/main/java/io/github/bedwarsrel/mca/MatchReportPayload.java::toJson` — sent fields are listed in its
   class javadoc L16-19; `matchmaking_group_id` must be ADDED there and
   in `mca/MatchSummary.java`).
 - Effect on MCA: the settlement releases the room reservation and links
@@ -104,5 +113,5 @@ L215-222 is the precedent).
 - common/src/main/java/io/github/bedwarsrel/mca/MatchReportService.java (worker thread L69-76, reportGameEnd L125, onGameOver L158)
 - common/src/main/java/io/github/bedwarsrel/mca/MatchSummaryBuilder.java::fromGame (L152, map_name = region name L189)
 - common/src/main/java/io/github/bedwarsrel/mca/MatchReportPayload.java sent-fields javadoc (L16-19)
-- common/src/main/java/io/github/bedwarsrel/mca/ReportTransport.java (POST-only, L42)
+- common/src/main/java/io/github/bedwarsrel/mca/ReportTransport.java (POST + GET since the 2026-11-08 implementation)
 - HA-Contract docs/api/openapi/matchcorearena-business.yaml 1.10.0 (assignment room/reason, matchmaking_group_id round-trip)

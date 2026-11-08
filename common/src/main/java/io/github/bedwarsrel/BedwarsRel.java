@@ -711,6 +711,7 @@ public class BedwarsRel extends JavaPlugin {
 
   @Override
   public void onDisable() {
+    io.github.bedwarsrel.mca.RoomAssignmentService.shutdown();
     io.github.bedwarsrel.mca.MatchReportService.shutdown();
     this.stopTimeListener();
     this.gameManager.unloadGames();
@@ -800,10 +801,15 @@ public class BedwarsRel extends JavaPlugin {
 
     // MCA match result reporting (async, idempotent; degrades to a warning
     // when the endpoint or credentials are not configured)
-    io.github.bedwarsrel.mca.MatchReportService.init(
+    io.github.bedwarsrel.mca.MatchReportConfig mcaConfig =
         io.github.bedwarsrel.mca.MatchReportConfig
-            .load(this.getConfig().getConfigurationSection("match-reporting")),
-        this.getDataFolder(), this.getLogger());
+            .load(this.getConfig().getConfigurationSection("match-reporting"));
+    io.github.bedwarsrel.mca.MatchReportService.init(mcaConfig, this.getDataFolder(),
+        this.getLogger());
+    // MCA room assignment (bungee join routing; shares the reporting
+    // credentials and degrades to the legacy join behavior when not
+    // operational)
+    io.github.bedwarsrel.mca.RoomAssignmentService.init(mcaConfig, this.getLogger());
   }
 
   private void registerBugsnag() {

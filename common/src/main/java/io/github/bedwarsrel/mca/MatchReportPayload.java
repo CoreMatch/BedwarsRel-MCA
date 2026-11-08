@@ -16,7 +16,10 @@ import java.util.TimeZone;
  * <p>Sent fields: {@code match_type}, {@code teams} (each with
  * {@code result} win/lose/draw), {@code duration_seconds}, {@code map_name},
  * {@code game_id} (server-side idempotency key), {@code source} ("game"),
- * {@code started_at} and {@code finished_at}. A game without a winner is
+ * {@code started_at}, {@code finished_at} and — when the game was entered
+ * through an MCA room assignment (HA-Contract 1.10.0) —
+ * {@code matchmaking_group_id}, which lets the settlement release the room
+ * reservation and link match to formed group. A game without a winner is
  * reported as an all-draw match (settled with S=0.5 server-side).
  */
 public final class MatchReportPayload {
@@ -51,6 +54,10 @@ public final class MatchReportPayload {
     appendStringField(sb, "started_at", formatRfc3339Utc(summary.getStartedAtMillis()));
     sb.append(',');
     appendStringField(sb, "finished_at", formatRfc3339Utc(summary.getFinishedAtMillis()));
+    if (summary.getMatchmakingGroupId() > 0L) {
+      sb.append(',');
+      sb.append("\"matchmaking_group_id\":").append(summary.getMatchmakingGroupId());
+    }
     sb.append('}');
     return sb.toString();
   }
@@ -277,7 +284,10 @@ public final class MatchReportPayload {
       return null;
     }
 
-    return new MatchSummary(gameId, mapName, matchType, startedAtMillis, finishedAtMillis, teams);
+    long matchmakingGroupId = obj.getLong("matchmaking_group_id", 0L);
+
+    return new MatchSummary(gameId, mapName, matchType, startedAtMillis, finishedAtMillis, teams,
+        Math.max(0L, matchmakingGroupId));
   }
 
   /**

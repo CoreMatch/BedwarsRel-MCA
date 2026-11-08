@@ -114,6 +114,12 @@ public final class MatchSummaryBuilder {
    */
   public static MatchSummary build(String mapName, long startedAtMillis, long finishedAtMillis,
       List<TeamInput> teamInputs) {
+    return build(mapName, startedAtMillis, finishedAtMillis, teamInputs, 0L);
+  }
+
+  /** Same as {@link #build(String, long, long, List)} with a matchmaking group id. */
+  public static MatchSummary build(String mapName, long startedAtMillis, long finishedAtMillis,
+      List<TeamInput> teamInputs, long matchmakingGroupId) {
     if (teamInputs == null || teamInputs.isEmpty()) {
       throw new IllegalArgumentException("a match summary needs at least one team");
     }
@@ -141,7 +147,7 @@ public final class MatchSummaryBuilder {
     String matchType = buildMatchType(teams);
     String gameId = GameIdGenerator.generate(mapName, matchType, started, teams);
     return new MatchSummary(gameId, mapName == null ? "" : mapName, matchType, started, finished,
-        teams);
+        teams, Math.max(0L, matchmakingGroupId));
   }
 
   /**
@@ -150,6 +156,16 @@ public final class MatchSummaryBuilder {
    * mutated once the game-over sequence continues.
    */
   public static MatchSummary fromGame(Game game, Team winner, long finishedAtMillis) {
+    return fromGame(game, winner, finishedAtMillis, 0L);
+  }
+
+  /**
+   * Same as {@link #fromGame(Game, Team, long)} but attaches the MCA
+   * matchmaking group id remembered for this game (0 when the game was not
+   * entered through an MCA room assignment).
+   */
+  public static MatchSummary fromGame(Game game, Team winner, long finishedAtMillis,
+      long matchmakingGroupId) {
     long startedAt = game.getStartedAt();
     if (startedAt <= 0L) {
       startedAt = finishedAtMillis;
@@ -186,7 +202,8 @@ public final class MatchSummaryBuilder {
       throw new IllegalArgumentException("game has no participants to report");
     }
 
-    return build(game.getRegionName(), startedAt, finishedAtMillis, teamInputs);
+    return build(game.getRegionName(), startedAt, finishedAtMillis, teamInputs,
+        matchmakingGroupId);
   }
 
   private static ParticipantInput toParticipantInput(Player player,

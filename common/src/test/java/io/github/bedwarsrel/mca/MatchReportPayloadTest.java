@@ -129,4 +129,40 @@ public class MatchReportPayloadTest {
     assertEquals("1970-01-01T00:00:00Z", MatchReportPayload.formatRfc3339Utc(0L));
     assertEquals("2023-11-14T22:13:20Z", MatchReportPayload.formatRfc3339Utc(1_700_000_000_000L));
   }
+
+  @Test
+  public void matchmakingGroupIdIsEchoedWhenPresent() {
+    MatchSummary withGroup = MatchSummaryBuilder.build("arena1", 1000L, 61_000L, Arrays.asList(
+        new TeamInput("red", 1, 1, true, Arrays.asList(
+            new ParticipantInput("u1", "n1", 60, 1, 0))),
+        new TeamInput("blue", 1, 0, false, Arrays.asList(
+            new ParticipantInput("u2", "n2", 30, 0, 1)))),
+        42L);
+
+    String json = MatchReportPayload.toJson(withGroup);
+    assertTrue(json.contains("\"matchmaking_group_id\":42"));
+
+    // games without an MCA assignment keep the pre-1.10.0 payload shape
+    MatchSummary withoutGroup = MatchSummaryBuilder.build("arena1", 1000L, 61_000L, Arrays.asList(
+        new TeamInput("red", 1, 1, true, Arrays.asList(
+            new ParticipantInput("u1", "n1", 60, 1, 0))),
+        new TeamInput("blue", 1, 0, false, Arrays.asList(
+            new ParticipantInput("u2", "n2", 30, 0, 1)))));
+    assertFalse(MatchReportPayload.toJson(withoutGroup).contains("matchmaking_group_id"));
+  }
+
+  @Test
+  public void deadLetterRoundTripPreservesMatchmakingGroupId() {
+    MatchSummary withGroup = MatchSummaryBuilder.build("arena1", 1000L, 61_000L, Arrays.asList(
+        new TeamInput("red", 1, 1, true, Arrays.asList(
+            new ParticipantInput("u1", "n1", 60, 1, 0))),
+        new TeamInput("blue", 1, 0, false, Arrays.asList(
+            new ParticipantInput("u2", "n2", 30, 0, 1)))),
+        777L);
+
+    MatchSummary parsed = MatchReportPayload.fromJson(MatchReportPayload.toJson(withGroup));
+
+    assertEquals(777L, parsed.getMatchmakingGroupId());
+    assertEquals(withGroup.getGameId(), parsed.getGameId());
+  }
 }

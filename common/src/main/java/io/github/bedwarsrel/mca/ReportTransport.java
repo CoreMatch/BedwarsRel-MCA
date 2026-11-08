@@ -4,8 +4,9 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * Minimal HTTP POST abstraction used by the report pipeline, so the retry
- * logic and the token exchange can be unit-tested without a network.
+ * Minimal HTTP abstraction used by the report pipeline (POST) and the
+ * room-assignment query (GET), so the retry logic, the assignment lookup
+ * and the token exchange can be unit-tested without a network.
  */
 public interface ReportTransport {
 
@@ -41,4 +42,14 @@ public interface ReportTransport {
    */
   Response post(String url, String contentType, byte[] body, Map<String, String> headers,
       int timeoutMillis) throws IOException;
+
+  /**
+   * Performs one HTTP GET.
+   *
+   * @param url           absolute endpoint URL
+   * @param headers       extra headers (e.g. Authorization), may be empty
+   * @param timeoutMillis connect and read timeout
+   * @throws IOException on any network-level failure (timeout, refused, DNS)
+   */
+  Response get(String url, Map<String, String> headers, int timeoutMillis) throws IOException;
 }
