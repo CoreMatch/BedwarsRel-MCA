@@ -21,13 +21,26 @@ public final class UrlConnectionTransport implements ReportTransport {
   @Override
   public Response post(String url, String contentType, byte[] body, Map<String, String> headers,
       int timeoutMillis) throws IOException {
+    return execute("POST", url, contentType, body, headers, timeoutMillis);
+  }
+
+  @Override
+  public Response get(String url, Map<String, String> headers, int timeoutMillis)
+      throws IOException {
+    return execute("GET", url, null, null, headers, timeoutMillis);
+  }
+
+  private static Response execute(String method, String url, String contentType, byte[] body,
+      Map<String, String> headers, int timeoutMillis) throws IOException {
     HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
     try {
-      connection.setRequestMethod("POST");
+      connection.setRequestMethod(method);
       connection.setConnectTimeout(timeoutMillis);
       connection.setReadTimeout(timeoutMillis);
-      connection.setDoOutput(true);
-      connection.setRequestProperty("Content-Type", contentType);
+      if (body != null) {
+        connection.setDoOutput(true);
+        connection.setRequestProperty("Content-Type", contentType);
+      }
       connection.setRequestProperty("Accept", "application/json");
       if (headers != null) {
         for (Map.Entry<String, String> header : headers.entrySet()) {
@@ -35,12 +48,14 @@ public final class UrlConnectionTransport implements ReportTransport {
         }
       }
 
-      OutputStream output = connection.getOutputStream();
-      try {
-        output.write(body);
-        output.flush();
-      } finally {
-        output.close();
+      if (body != null) {
+        OutputStream output = connection.getOutputStream();
+        try {
+          output.write(body);
+          output.flush();
+        } finally {
+          output.close();
+        }
       }
 
       int status = connection.getResponseCode();

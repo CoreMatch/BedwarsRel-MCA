@@ -29,10 +29,12 @@ public final class MatchReportConfig {
   public static final int DEFAULT_LEDGER_CAPACITY = 2000;
   public static final int DEFAULT_DEAD_LETTER_CAPACITY = 200;
   public static final String DEFAULT_SCOPE = "match:report";
+  public static final String DEFAULT_ASSIGNMENT_URL = "";
   static final String LEGACY_TOKEN_PLACEHOLDER = "your-access-token-here";
 
   private final boolean enabled;
   private final String apiUrl;
+  private final String assignmentUrl;
   private final int timeoutMillis;
   private final int maxAttempts;
   private final long retryDelayMillis;
@@ -45,11 +47,13 @@ public final class MatchReportConfig {
   private final String clientSecret;
   private final String scope;
 
-  public MatchReportConfig(boolean enabled, String apiUrl, int timeoutMillis, int maxAttempts,
+  public MatchReportConfig(boolean enabled, String apiUrl, String assignmentUrl,
+      int timeoutMillis, int maxAttempts,
       long retryDelayMillis, int queueCapacity, int ledgerCapacity, int deadLetterCapacity,
       String serviceToken, String tokenUrl, String clientId, String clientSecret, String scope) {
     this.enabled = enabled;
     this.apiUrl = apiUrl == null ? "" : apiUrl.trim();
+    this.assignmentUrl = assignmentUrl == null ? "" : assignmentUrl.trim();
     this.timeoutMillis = Math.max(100, timeoutMillis);
     this.maxAttempts = Math.max(1, maxAttempts);
     this.retryDelayMillis = Math.max(0L, retryDelayMillis);
@@ -63,6 +67,15 @@ public final class MatchReportConfig {
     this.scope = scope == null || scope.trim().isEmpty() ? DEFAULT_SCOPE : scope.trim();
   }
 
+  /** Convenience constructor without an explicit {@code assignment-url}. */
+  public MatchReportConfig(boolean enabled, String apiUrl, int timeoutMillis, int maxAttempts,
+      long retryDelayMillis, int queueCapacity, int ledgerCapacity, int deadLetterCapacity,
+      String serviceToken, String tokenUrl, String clientId, String clientSecret, String scope) {
+    this(enabled, apiUrl, DEFAULT_ASSIGNMENT_URL, timeoutMillis, maxAttempts, retryDelayMillis,
+        queueCapacity, ledgerCapacity, deadLetterCapacity, serviceToken, tokenUrl, clientId,
+        clientSecret, scope);
+  }
+
   /**
    * Loads the configuration from the {@code match-reporting} section.
    * A missing section yields all-default values (reporting disabled in
@@ -70,7 +83,8 @@ public final class MatchReportConfig {
    */
   public static MatchReportConfig load(ConfigurationSection section) {
     if (section == null) {
-      return new MatchReportConfig(DEFAULT_ENABLED, DEFAULT_API_URL, DEFAULT_TIMEOUT_MILLIS,
+      return new MatchReportConfig(DEFAULT_ENABLED, DEFAULT_API_URL, DEFAULT_ASSIGNMENT_URL,
+          DEFAULT_TIMEOUT_MILLIS,
           DEFAULT_MAX_ATTEMPTS, DEFAULT_RETRY_DELAY_MILLIS, DEFAULT_QUEUE_CAPACITY,
           DEFAULT_LEDGER_CAPACITY, DEFAULT_DEAD_LETTER_CAPACITY, "", "", "", "", DEFAULT_SCOPE);
     }
@@ -88,6 +102,7 @@ public final class MatchReportConfig {
     return new MatchReportConfig(
         section.getBoolean("enabled", DEFAULT_ENABLED),
         section.getString("api-url", DEFAULT_API_URL),
+        section.getString("assignment-url", DEFAULT_ASSIGNMENT_URL),
         section.getInt("timeout-millis", DEFAULT_TIMEOUT_MILLIS),
         section.getInt("retry.max-attempts", DEFAULT_MAX_ATTEMPTS),
         section.getLong("retry.delay-millis", DEFAULT_RETRY_DELAY_MILLIS),
@@ -107,6 +122,15 @@ public final class MatchReportConfig {
 
   public String getApiUrl() {
     return this.apiUrl;
+  }
+
+  /**
+   * Explicit room-assignment endpoint prefix (player UUID is appended).
+   * Empty when not configured; {@code RoomAssignmentService} then derives it
+   * from {@link #getApiUrl()} if that points at {@code /api/matches}.
+   */
+  public String getAssignmentUrl() {
+    return this.assignmentUrl;
   }
 
   public int getTimeoutMillis() {

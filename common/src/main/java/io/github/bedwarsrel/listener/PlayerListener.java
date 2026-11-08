@@ -678,7 +678,9 @@ public class PlayerListener extends BaseListener {
     }
 
     ArrayList<Game> games = BedwarsRel.getInstance().getGameManager().getGames();
-    if (games.size() == 0) {
+    boolean mcaRouting =
+        BedwarsRel.getInstance().isBungee() && io.github.bedwarsrel.mca.RoomAssignmentService.isOperational();
+    if (games.size() == 0 && !mcaRouting) {
       return;
     }
 
@@ -697,6 +699,16 @@ public class PlayerListener extends BaseListener {
 
     if (BedwarsRel.getInstance().isBungee()) {
       je.setJoinMessage(null);
+
+      if (mcaRouting) {
+        // MCA room layer (HA-Contract 1.10.0): the concrete room comes
+        // from the assignment query, never from the legacy "first game"
+        // fallback. The lookup runs off the main thread; failures return the
+        // player to the proxy lobby with a message.
+        io.github.bedwarsrel.mca.RoomAssignmentService.getInstance().handlePlayerJoin(player);
+        return;
+      }
+
       final Game firstGame = games.get(0);
 
       if (firstGame.getState() == GameState.STOPPED && player.hasPermission("bw.setup")) {

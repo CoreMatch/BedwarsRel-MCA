@@ -64,6 +64,11 @@ public class MatchReportServiceTest {
       }
       return (Response) next;
     }
+
+    @Override
+    public Response get(String url, Map<String, String> headers, int timeoutMillis) {
+      throw new UnsupportedOperationException("GET not scripted in MatchReportServiceTest");
+    }
   }
 
   /** Captures log records of one logger. */

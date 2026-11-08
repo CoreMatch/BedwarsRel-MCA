@@ -100,15 +100,22 @@ public final class MatchSummary {
   private final long startedAtMillis;
   private final long finishedAtMillis;
   private final List<TeamResult> teams;
+  private final long matchmakingGroupId;
 
   MatchSummary(String gameId, String mapName, String matchType, long startedAtMillis,
       long finishedAtMillis, List<TeamResult> teams) {
+    this(gameId, mapName, matchType, startedAtMillis, finishedAtMillis, teams, 0L);
+  }
+
+  MatchSummary(String gameId, String mapName, String matchType, long startedAtMillis,
+      long finishedAtMillis, List<TeamResult> teams, long matchmakingGroupId) {
     this.gameId = gameId;
     this.mapName = mapName;
     this.matchType = matchType;
     this.startedAtMillis = startedAtMillis;
     this.finishedAtMillis = finishedAtMillis;
     this.teams = Collections.unmodifiableList(new ArrayList<TeamResult>(teams));
+    this.matchmakingGroupId = matchmakingGroupId;
   }
 
   /** Stable idempotency key of this game, see {@link GameIdGenerator}. */
@@ -166,5 +173,15 @@ public final class MatchSummary {
       }
     }
     return losers;
+  }
+
+  /**
+   * MatchCoreArena matchmaking group this game belongs to (HA-Contract
+   * 1.10.0 round trip): {@code > 0} when the game was entered through an
+   * MCA room assignment, {@code 0} otherwise (reports without a group id
+   * stay valid; the MCA-side TTL release is the backstop).
+   */
+  public long getMatchmakingGroupId() {
+    return this.matchmakingGroupId;
   }
 }

@@ -971,6 +971,11 @@ match-reporting:
   # The API endpoint for reporting match results
   # type: string
   api-url: "https://arena.mcnb.dev/api/matches"
+  # Room-assignment endpoint prefix for the MCA room layer (HA-Contract
+  # 1.10.0); the player UUID is appended at query time. Leave empty to derive
+  # it from api-url (…/api/matches -> …/api/matchmaking/assignment/).
+  # type: string
+  assignment-url: ""
   # Legacy static bearer token (treated as credentials.service-token).
   # Keep the placeholder value to leave it unused.
   # type: string

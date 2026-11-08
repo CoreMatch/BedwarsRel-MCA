@@ -141,7 +141,8 @@ public final class MatchReportService {
     return instance;
   }
 
-  private static TokenProvider buildTokenProvider(MatchReportConfig config) {
+  /** Shared with {@link RoomAssignmentService}: same credential forms. */
+  static TokenProvider buildTokenProvider(MatchReportConfig config) {
     if (config.hasServiceToken()) {
       return TokenProvider.forServiceToken(config.getServiceToken());
     }
@@ -168,7 +169,12 @@ public final class MatchReportService {
 
     MatchSummary summary;
     try {
-      summary = MatchSummaryBuilder.fromGame(game, winner, System.currentTimeMillis());
+      // HA-Contract 1.10.0 round trip: when this game was entered through an
+      // MCA room assignment, echo the group id back so the settlement can
+      // release the room reservation and link match to formed group.
+      Long groupId = RoomAssignmentService.consumeGroupIdForGame(game.getName());
+      summary = MatchSummaryBuilder.fromGame(game, winner, System.currentTimeMillis(),
+          groupId == null ? 0L : groupId.longValue());
     } catch (Exception e) {
       this.logger.log(Level.WARNING, "MCA match report skipped: failed to build the summary", e);
       return;
