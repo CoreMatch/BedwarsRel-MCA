@@ -1,0 +1,36 @@
+# BedwarsRel-MCA 部署声明（deploy-manifest v1）
+# schema 依据：HA-Services-Deployer internal/manifest/（SchemaVersion=1）
+#
+# kind=plugin：Bukkit 插件 jar，装进第三方 MC 服务器（CraftBukkit/Spigot/Paper
+# 1.8.x 或 1.12），没有自己的进程/端口/健康面。编排器对插件条目只登记与
+# 校验、不执行安装（阶段未设）；安装与配置见 HRPAuth-Wiki
+# deploy/bedwarsrel-mca.md。
+manifest_version: 1
+kind: plugin
+project: bedwarsrel-mca
+display_name: BedwarsRel-MCA
+group: game
+# 默认 profile 产物 BedwarsRel-1.3.6-SNAPSHOT.jar（release profile 产
+# 非 SNAPSHOT 名）；仓库无 git 版本 tag。
+service_version: "1.3.6-SNAPSHOT"
+
+facts:
+  depends_on:
+    # 对局上报唯一出口 MCA POST /api/matches（match:report scope）。
+    # MCA 不可达时上报进死信、游戏不受影响（fail-open），但"先有 MCA
+    # 再谈上报"的部署序关系仍按 required 登记。
+    - project: mca-server
+      kind: required
+  migration:
+    mode: none
+
+plugin:
+  # 承载运行时：MC 服务器 1.8.x/1.12（CraftBukkit/Spigot/Paper）。
+  # 子服当前不在编排体系内，target_project 留空、仅以 runtime 描述。
+  runtime: bukkit-server
+  # Bukkit 系服务端的插件目录（相对服务端工作目录）。
+  plugins_dir: plugins
+  artifact:
+    # ./build.sh 产物（NMS 模块构建需自备 CraftBukkit jar，见维基部署页）。
+    source: local_path
+    local_path: plugin/target/BedwarsRel-1.3.6-SNAPSHOT.jar
