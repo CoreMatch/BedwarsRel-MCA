@@ -20,17 +20,45 @@ If you would like to contribute to this repository, feel free to [fork the repo]
 
 ## Building
 
-**CI scope warning: a green GitHub Actions run does NOT mean the whole repository builds.**
+**Shortest reproducible path** from a fresh full clone — two commands, no
+need to read any script:
 
-The GitHub Actions workflow (`.github/workflows/ci.yml`) only builds and tests the `common` module, which carries the full test suite and has no NMS dependencies.
+```
+build/get-dependencies.sh
+mvn clean package
+```
 
-The NMS modules (`v1_8_r1`, `v1_8_r2`, `v1_8_r3`, `v1_12_r1`) — and therefore also the shaded `plugin` module that bundles them — depend on `org.spigotmc:minecraft-server:1.8-SNAPSHOT`, which no longer exists in any public Maven repository, and on CraftBukkit jars that are not committed. **CI does not cover these modules.** To build them locally you must supply the jars by hand:
+Loadable plugin jar: `plugin/target/BedwarsRel-1.3.6-SNAPSHOT.jar`.
 
-1. Place the required CraftBukkit jars (`craftbukkit-1.8-R0.1-SNAPSHOT.jar`, `craftbukkit-1.8.3.jar`, `craftbukkit-1.8.8.jar`, `craftbukkit-1.12.jar`) in the repository root.
-2. Run `build/get-dependencies.sh` to install them into your local Maven repository.
-3. Then run a full `mvn package` from the repository root.
+Any modern JDK works: the build is pinned to `source`/`target` 1.8 (bytecode
+major version 52) and was verified up to JDK 25; Maven 3.9+ is required.
 
-Without these manually supplied jars, only `mvn -pl common` builds will succeed.
+The NMS modules (`v1_8_r1`, `v1_8_r2`, `v1_8_r3`, `v1_12_r1`) — and therefore
+also the shaded `plugin` module that bundles them — depend on CraftBukkit
+server jars that are gitignored at HEAD. `build/get-dependencies.sh` makes
+them available and installs them into the local Maven repository:
+
+1. If a jar (`craftbukkit-1.8-R0.1-SNAPSHOT.jar`, `craftbukkit-1.8.3.jar`,
+   `craftbukkit-1.8.8.jar`, `craftbukkit-1.12.jar`) already sits in the
+   repository root, it is used as-is.
+2. Otherwise the jar is extracted from this repository's own git history —
+   the jars were tracked until commit `8e7f60d3`, so any **full clone** still
+   carries the bytes — and verified against pinned SHA-256 checksums. A
+   shallow clone has no such history; the script fails loudly and expects the
+   jars to be placed in the repository root manually.
+
+The script installs each jar with a minimal POM on purpose: the jars embed
+their original BuildTools POM, which declares a dependency on
+`org.spigotmc:minecraft-server` — an artifact that no longer exists in any
+public Maven repository and that this build never uses (every class the NMS
+modules compile against is already inside the CraftBukkit jars).
+
+The shaded, loadable plugin jar is written to
+`plugin/target/BedwarsRel-1.3.6-SNAPSHOT.jar`. `build.sh` chains both steps
+(install dependencies, then `mvn clean install -DskipTests`).
+
+The GitHub Actions workflow (`.github/workflows/ci.yml`) checks out full
+history, runs the same script, and builds and tests **all** modules.
 
 ## Implementing BedwarsRel
 ```xml
