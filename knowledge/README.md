@@ -39,3 +39,4 @@ Each entry is one page in ADR style:
 | [0001](0001-fork-scope-gameplay-upstream-local-commits.md) | Fork Scope: Gameplay Is Upstream, Local Commits Are Reporting + Build | accepted |
 | [0002](0002-match-result-reporting-to-matchcorearena.md) | Match Result Reporting to MatchCoreArena | accepted |
 | [0003](0003-version-support-narrowed-to-1.8-and-1.12.md) | Version Support Narrowed to 1.8.x and 1.12 | accepted |
+| [0004](0004-room-assignment-integration-spec.md) | Room Assignment Integration Spec (MCA Room Layer) — Not Yet Implemented | proposed |
