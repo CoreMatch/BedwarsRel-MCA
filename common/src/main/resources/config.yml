@@ -970,7 +970,7 @@ match-reporting:
   enabled: true
   # The API endpoint for reporting match results
   # type: string
-  api-url: "https://api.matchcorearena.com/api/matches"
+  api-url: "https://arena.mcnb.dev/api/matches"
   # Legacy static bearer token (treated as credentials.service-token).
   # Keep the placeholder value to leave it unused.
   # type: string
