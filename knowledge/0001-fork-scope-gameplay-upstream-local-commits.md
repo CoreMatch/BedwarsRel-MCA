@@ -28,9 +28,11 @@ This is a statement of verified fact about the fork's scope:
 - The shorthand "the fork only does match-result reporting" is inaccurate; the
   accurate statement is "reporting plus build/platform work, no gameplay
   change."
-- The fork keeps large craftbukkit jars (~96MB) locally at the repository root
-  for offline builds; they are gitignored and not tracked, so clones must
-  supply them out-of-band.
+- The fork keeps large craftbukkit jars (~96MB) out of the working tree: they
+  are gitignored at HEAD but remain in git history (untracked by commit
+  8e7f60d3), and `build/get-dependencies.sh` materializes them from history
+  (SHA-256 verified) and installs them into the local Maven repository, so
+  any full clone builds offline; shallow clones must supply the jars by hand.
 - Gameplay fixes/features must come from merging upstream; the fork does not
   own gameplay behavior.
 
@@ -44,7 +46,11 @@ This is a statement of verified fact about the fork's scope:
   GameLobbyCountdown) shows only accessor boilerplate + reporting hooks.
 - Reporting code:
   `common/src/main/java/io/github/bedwarsrel/mca/MatchReportService.java::MatchReportService`.
-- Offline-build jars at the repository root (local-only, gitignored):
-  `craftbukkit-1.12.jar`, `craftbukkit-1.8.3.jar`, `craftbukkit-1.8.8.jar`,
-  `craftbukkit-1.8-R0.1-SNAPSHOT.jar` (~96MB total).
+- Offline-build jars: gitignored at HEAD, present in git history until commit
+  8e7f60d3: `craftbukkit-1.12.jar`, `craftbukkit-1.8.3.jar`,
+  `craftbukkit-1.8.8.jar`, `craftbukkit-1.8-R0.1-SNAPSHOT.jar` (~96MB total);
+  `build/get-dependencies.sh` extracts (when absent) and installs them with a
+  minimal POM, because the POM embedded in each jar references
+  `org.spigotmc:minecraft-server`, which no longer exists in any public
+  repository and is not used for compilation.
 - Not verified: none material to the scope claim.

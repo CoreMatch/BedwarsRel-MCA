@@ -1,13 +1,15 @@
-# Minimal Java CI.
+# Full-build CI: builds and tests every module, including the NMS modules
+# (v1_8_r1..v1_12_r1) and the shaded plugin module.
 #
-# Scope warning: a green run here does NOT mean the whole repository builds.
-# The NMS modules (v1_8_r1..v1_12_r1) depend on
-# org.spigotmc:minecraft-server:1.8-SNAPSHOT, which no longer exists in any
-# public Maven repository, and on CraftBukkit jars that must be placed in the
-# repository root by hand (see build/get-dependencies.sh). Neither is
-# committed, so those modules cannot be built on hosted runners. CI therefore
-# only builds and tests the common module, which carries the full test suite
-# and has no NMS dependencies.
+# The NMS modules depend on CraftBukkit server jars that are gitignored at
+# HEAD but still exist in git history (untracked by commit 8e7f60d3). The
+# job therefore checks out full history and runs build/get-dependencies.sh,
+# which extracts those jars (SHA-256 verified) and installs them into the
+# local Maven repository with a minimal POM. The minimal POM matters because
+# the POM embedded in each jar declares org.spigotmc:minecraft-server, an
+# artifact that no longer exists in any public Maven repository and that
+# this build never compiles against (all classes the NMS modules need are
+# inside the CraftBukkit jars).
 name: Java CI
 
 on:
@@ -21,6 +23,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
+      with:
+        # Full history: the out-of-band craftbukkit jars live in history.
+        fetch-depth: 0
 
     - name: Set up JDK
       uses: actions/setup-java@v6
@@ -29,5 +34,8 @@ jobs:
         java-version: 17
         cache: maven
 
-    - name: Build and test common module
-      run: mvn -B test -pl common --no-transfer-progress
+    - name: Install out-of-band CraftBukkit jars
+      run: bash build/get-dependencies.sh
+
+    - name: Build and test all modules
+      run: mvn -B clean package --no-transfer-progress
