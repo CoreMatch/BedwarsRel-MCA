@@ -1,5 +1,5 @@
 # BedwarsRel-MCA 部署声明（deploy-manifest v1）
-# schema 依据：HA-Services-Deployer internal/manifest/（SchemaVersion=1）
+# schema 依据：HA-Cupbearer internal/manifest/（SchemaVersion=1）
 #
 # kind=plugin：Bukkit 插件 jar，装进第三方 MC 服务器（CraftBukkit/Spigot/Paper
 # 1.8.x 或 1.12），没有自己的进程/端口/健康面。编排器对插件条目只登记与
