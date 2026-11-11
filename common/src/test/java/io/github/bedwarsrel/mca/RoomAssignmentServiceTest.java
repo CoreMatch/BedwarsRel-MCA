@@ -205,6 +205,118 @@ public class RoomAssignmentServiceTest {
     assertEquals(RoomAssignmentService.Outcome.UNAVAILABLE, decision.outcome);
   }
 
+  @Test
+  public void http404DegradesToUnavailableWithStatusInDetail() {
+    FakeTransport transport = new FakeTransport().enqueueStatus(404,
+        "{\"success\":false,\"error\":{\"code\":\"not_found\"}}");
+
+    RoomAssignmentService.Decision decision =
+        service(transport).queryAssignment("11111111-1111-3111-8111-111111111111");
+
+    assertEquals(RoomAssignmentService.Outcome.UNAVAILABLE, decision.outcome);
+    assertTrue(decision.detail.contains("404"));
+  }
+
+  @Test
+  public void http503DegradesToUnavailable() {
+    FakeTransport transport = new FakeTransport().enqueueStatus(503, "");
+
+    RoomAssignmentService.Decision decision =
+        service(transport).queryAssignment("11111111-1111-3111-8111-111111111111");
+
+    assertEquals(RoomAssignmentService.Outcome.UNAVAILABLE, decision.outcome);
+    assertTrue(decision.detail.contains("503"));
+  }
+
+  @Test
+  public void emptyRoomStringDegradesToUnavailable() {
+    FakeTransport transport = new FakeTransport().enqueueStatus(200,
+        "{\"success\":true,\"data\":{\"assigned\":true,\"group_id\":7,\"room\":\"\"}}");
+
+    RoomAssignmentService.Decision decision =
+        service(transport).queryAssignment("11111111-1111-3111-8111-111111111111");
+
+    assertEquals(RoomAssignmentService.Outcome.UNAVAILABLE, decision.outcome);
+    assertTrue(decision.detail.contains("without a room"));
+  }
+
+  @Test
+  public void blankRoomStringIsTrimmedToUnavailable() {
+    FakeTransport transport = new FakeTransport().enqueueStatus(200,
+        "{\"success\":true,\"data\":{\"assigned\":true,\"group_id\":7,"
+            + "\"room\":\"   \"}}");
+
+    RoomAssignmentService.Decision decision =
+        service(transport).queryAssignment("11111111-1111-3111-8111-111111111111");
+
+    assertEquals(RoomAssignmentService.Outcome.UNAVAILABLE, decision.outcome);
+  }
+
+  @Test
+  public void validRoomIsTrimmed() {
+    FakeTransport transport = new FakeTransport().enqueueStatus(200,
+        "{\"success\":true,\"data\":{\"assigned\":true,\"group_id\":7,"
+            + "\"room\":\"  arena-1  \"}}");
+
+    RoomAssignmentService.Decision decision =
+        service(transport).queryAssignment("11111111-1111-3111-8111-111111111111");
+
+    assertEquals(RoomAssignmentService.Outcome.JOIN_ROOM, decision.outcome);
+    assertEquals("arena-1", decision.room);
+  }
+
+  @Test
+  public void successTrueWithoutDataObjectDegradesToUnavailable() {
+    FakeTransport transport = new FakeTransport().enqueueStatus(200,
+        "{\"success\":true}");
+
+    RoomAssignmentService.Decision decision =
+        service(transport).queryAssignment("11111111-1111-3111-8111-111111111111");
+
+    assertEquals(RoomAssignmentService.Outcome.UNAVAILABLE, decision.outcome);
+    assertTrue(decision.detail.contains("lacks the data object"));
+  }
+
+  @Test
+  public void assignedFieldMissingDefaultsToNoAssignment() {
+    FakeTransport transport = new FakeTransport().enqueueStatus(200,
+        "{\"success\":true,\"data\":{\"room\":\"arena-1\",\"group_id\":1}}");
+
+    RoomAssignmentService.Decision decision =
+        service(transport).queryAssignment("11111111-1111-3111-8111-111111111111");
+
+    // assigned defaults to false when the field is missing
+    assertEquals(RoomAssignmentService.Outcome.NO_ASSIGNMENT, decision.outcome);
+  }
+
+  @Test
+  public void multipleSequentialQueriesEachGetTheirOwnOutcome() {
+    FakeTransport transport = new FakeTransport()
+        .enqueueStatus(200,
+            "{\"success\":true,\"data\":{\"assigned\":true,\"group_id\":1,"
+                + "\"room\":\"arena-A\"}}")
+        .enqueueStatus(502, "")
+        .enqueueStatus(200,
+            "{\"success\":true,\"data\":{\"assigned\":true,\"group_id\":2,"
+                + "\"room\":\"arena-B\"}}");
+
+    RoomAssignmentService srv = service(transport);
+
+    RoomAssignmentService.Decision d1 =
+        srv.queryAssignment("11111111-1111-3111-8111-111111111111");
+    RoomAssignmentService.Decision d2 =
+        srv.queryAssignment("22222222-2222-3222-8222-222222222222");
+    RoomAssignmentService.Decision d3 =
+        srv.queryAssignment("33333333-3333-3333-8333-333333333333");
+
+    assertEquals(RoomAssignmentService.Outcome.JOIN_ROOM, d1.outcome);
+    assertEquals("arena-A", d1.room);
+    assertEquals(RoomAssignmentService.Outcome.UNAVAILABLE, d2.outcome);
+    assertEquals(RoomAssignmentService.Outcome.JOIN_ROOM, d3.outcome);
+    assertEquals("arena-B", d3.room);
+    assertEquals(3, transport.requestedUrls.size());
+  }
+
   // ---- group-id round-trip store ----
 
   @Test

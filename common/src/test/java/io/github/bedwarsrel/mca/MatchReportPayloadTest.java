@@ -2,6 +2,7 @@ package io.github.bedwarsrel.mca;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import io.github.bedwarsrel.mca.MatchSummaryBuilder.ParticipantInput;
@@ -82,6 +83,73 @@ public class MatchReportPayloadTest {
     int second = json.indexOf("\"result\":\"draw\"", first + 1);
     assertTrue(first >= 0);
     assertTrue(second > first);
+  }
+
+  @Test
+  public void allDrawPayloadIsSymmetricSortedByTeamId() {
+    // When no winner, teams are NOT winner-first sorted — they fall through
+    // to team-id alphabetical order (blue before red). This test verifies
+    // the sorting falls back to team-id ordering for all-draw matches.
+    MatchSummary draw = MatchSummaryBuilder.build("m", 1000L, 61_000L, Arrays.asList(
+        // intentionally pass red first so we can see if sorting changes it
+        new TeamInput("red", 1, 0, false, Arrays.asList(
+            new ParticipantInput("u1", "n1", 60, 1, 1))),
+        new TeamInput("blue", 1, 0, false, Arrays.asList(
+            new ParticipantInput("u2", "n2", 55, 1, 1)))));
+
+    String json = MatchReportPayload.toJson(draw);
+    int blue = json.indexOf("\"team_id\":\"blue\"");
+    int red = json.indexOf("\"team_id\":\"red\"");
+    assertTrue("team-id alphabetical order must be preserved when no winner",
+        blue < red);
+  }
+
+  @Test
+  public void threeWayAllDrawCarriesAllDraws() {
+    MatchSummary draw = MatchSummaryBuilder.build("m", 1000L, 61_000L, Arrays.asList(
+        new TeamInput("alpha", 1, 0, false, Arrays.asList(
+            new ParticipantInput("u1", "n1", 60, 1, 1))),
+        new TeamInput("beta", 1, 0, false, Arrays.asList(
+            new ParticipantInput("u2", "n2", 55, 1, 1))),
+        new TeamInput("gamma", 1, 0, false, Arrays.asList(
+            new ParticipantInput("u3", "n3", 50, 2, 2)))));
+
+    String json = MatchReportPayload.toJson(draw);
+
+    assertFalse(json.contains("\"result\":\"win\""));
+    assertFalse(json.contains("\"result\":\"lose\""));
+
+    int count = 0;
+    int idx = 0;
+    while ((idx = json.indexOf("\"result\":\"draw\"", idx)) >= 0) {
+      count++;
+      idx += 1;
+    }
+    assertEquals("all 3 teams must report draw", 3, count);
+  }
+
+  @Test
+  public void allDrawWithMatchmakingGroupIdRoundTrips() {
+    // All-draw payload must still carry matchmaking_group_id when present,
+    // so MCA settlement can release the room reservation even on draws.
+    MatchSummary draw = MatchSummaryBuilder.build("m", 1000L, 61_000L, Arrays.asList(
+        new TeamInput("red", 1, 0, false, Arrays.asList(
+            new ParticipantInput("u1", "n1", 60, 1, 1))),
+        new TeamInput("blue", 1, 0, false, Arrays.asList(
+            new ParticipantInput("u2", "n2", 55, 1, 1)))),
+        12345L);
+
+    String json = MatchReportPayload.toJson(draw);
+    assertTrue("all-draw + group id must echo matchmaking_group_id",
+        json.contains("\"matchmaking_group_id\":12345"));
+
+    MatchSummary roundTripped = MatchReportPayload.fromJson(json);
+    assertNotNull(roundTripped);
+    assertEquals(12345L, roundTripped.getMatchmakingGroupId());
+    assertEquals(2, roundTripped.getTeams().size());
+    assertFalse("no team should be marked winner on all-draw",
+        roundTripped.getTeams().get(0).isWinner()
+            || roundTripped.getTeams().get(1).isWinner());
   }
 
   @Test
