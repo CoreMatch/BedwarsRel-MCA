@@ -141,21 +141,21 @@ package:
   `common/src/main/java/io/github/bedwarsrel/game/Game.java::getParticipants`,
   `common/src/main/java/io/github/bedwarsrel/statistics/PlayerStatistic.java::getCurrentKills`.
 - Receiving side: MatchCoreArena-Server
-  `/home/lnb/Desktop/HA/MatchCoreArena-Server/api/router.go::Report`
+  `/home/lnb/Desktop/HA/matchcore/MatchCoreArena-Server/api/router.go::Report`
   (`api.POST("/matches", matchH.Report)` under the `/api` auth group);
   scope requirement
-  `/home/lnb/Desktop/HA/MatchCoreArena-Server/api/handler/match.go::Report`
+  `/home/lnb/Desktop/HA/matchcore/MatchCoreArena-Server/api/handler/match.go::Report`
   (`match:report`); bearer check
-  `/home/lnb/Desktop/HA/MatchCoreArena-Server/api/middleware/auth.go::extractToken`;
+  `/home/lnb/Desktop/HA/matchcore/MatchCoreArena-Server/api/middleware/auth.go::extractToken`;
   service-token store
-  `/home/lnb/Desktop/HA/MatchCoreArena-Server/internal/auth/verifier.go::Verify`
+  `/home/lnb/Desktop/HA/matchcore/MatchCoreArena-Server/internal/auth/verifier.go::Verify`
   (tokens.yaml lookup; HRPAuth-verified tokens get scope `user.read` only —
   PENDING-DECISIONS.md item 5);
   expected struct
-  `/home/lnb/Desktop/HA/MatchCoreArena-Server/internal/service/match.go::TeamReportInput`
+  `/home/lnb/Desktop/HA/matchcore/MatchCoreArena-Server/internal/service/match.go::TeamReportInput`
   (unified reporting incl. `game_id`/`map_name` since server `bbee38d`);
   settlement with `game_id` idempotency
-  `/home/lnb/Desktop/HA/MatchCoreArena-Server/internal/service/match.go::Report`.
+  `/home/lnb/Desktop/HA/matchcore/MatchCoreArena-Server/internal/service/match.go::Report`.
 - Contract: HA-Contract v1.4.0
   `/home/lnb/Desktop/HA/HA-Contract/docs/api/openapi/matchcorearena-business.yaml`
   (path `/api/matches` single entry point, schemas `TeamReportInput`/
