@@ -14,6 +14,15 @@ and the bungee join hook in
 This document keeps the decision record; where prose below says "must be
 added", it has been added.
 
+Verification (2026-11-12, disposable local environment, cleaned up
+afterwards): with a real MCA-Server (room inventory reserving `arena-e2e`),
+real Velocity + VelocityGate and this plugin on a real CraftBukkit 1.8.8
+sub-server, two protocol-47 clients were routed in, joined `arena-e2e`
+(log: "joined room 'arena-e2e' (group_id=2)"), a real game started and
+ended, and the game-over report carried the group id back — the MCA
+settlement consumed it and released the room reservation. Remaining
+unverified boundary: a real human Minecraft client.
+
 ## Context
 Delivery is layered: MCA forms matches and reserves a room per formed
 group; the Velocity proxy (MatchCoreArena-VelocityGate) routes the
