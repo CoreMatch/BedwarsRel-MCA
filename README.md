@@ -17,8 +17,8 @@ BedwarsRel-MCA is a MatchCore Arena fork of BedwarsRel for server operators who 
 
 ## Learn more
 
-- [HA Wiki](https://wiki.mcnb.dev/) — ecosystem documentation
-- [HA Contract](https://github.com/CoreMatch/HA-Contract) — interface contracts
+- [Armorial Wiki](https://wiki.mcnb.dev/) — ecosystem documentation
+- [Armorial Contract](https://github.com/CoreMatch/HA-Contract) — interface contracts
 - [MatchCoreArena Server](https://github.com/CoreMatch/MatchCoreArena-Server) — settlement core
 - [BedwarsRel upstream](https://github.com/BedwarsRel/BedwarsRel) — original project and upstream issues
 - [This fork](https://github.com/CoreMatch/BedwarsRel-MCA/issues) — report fork-specific issues here

@@ -15,7 +15,7 @@ This knowledge base **does not define outward behavior**. The bedwars gameplay
 itself is defined by upstream [BedwarsRel](https://github.com/BedwarsRel/BedwarsRel)
 and is not re-defined here; the receiving side of match reporting is defined by
 the MatchCoreArena service, and ecosystem outward behavior by
-[HA-Contract](https://github.com/CoreMatch/HA-Contract) where applicable. If an
+[Armorial Contract](https://github.com/CoreMatch/HA-Contract) where applicable. If an
 entry here ever appears to contradict a contract, **the contract wins and the
 entry is stale — fix the entry, never the contract**, and surface the conflict
 to the owner.

@@ -3,12 +3,12 @@
 #
 # kind=plugin：Bukkit 插件 jar，装进第三方 MC 服务器（CraftBukkit/Spigot/Paper
 # 1.8.x 或 1.12），没有自己的进程/端口/健康面。编排器对插件条目只登记与
-# 校验、不执行安装（阶段未设）；安装与配置见 HRPAuth-Wiki
+# 校验、不执行安装（阶段未设）；安装与配置见 Armorial Wiki
 # deploy/bedwarsrel-mca.md。
 manifest_version: 1
 kind: plugin
 project: bedwarsrel-mca
-display_name: BedwarsRel-MCA
+display_name: Armorial BedwarsRel-MCA
 group: game
 # 默认 profile 产物 BedwarsRel-1.3.6-SNAPSHOT.jar（release profile 产
 # 非 SNAPSHOT 名）；仓库无 git 版本 tag。

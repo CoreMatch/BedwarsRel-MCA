@@ -17,8 +17,8 @@ BedwarsRel-MCA 是 BedwarsRel 的 MatchCore Arena 分支，面向希望保留熟
 
 ## 进一步了解
 
-- [HA Wiki](https://wiki.mcnb.dev/) — 生态文档
-- [HA Contract](https://github.com/CoreMatch/HA-Contract) — 接口契约
+- [Armorial Wiki](https://wiki.mcnb.dev/) — 生态文档
+- [Armorial Contract](https://github.com/CoreMatch/HA-Contract) — 接口契约
 - [MatchCoreArena Server](https://github.com/CoreMatch/MatchCoreArena-Server) — 结算核心
 - [BedwarsRel 上游](https://github.com/BedwarsRel/BedwarsRel) — 原项目与上游问题追踪
 - [本分支](https://github.com/CoreMatch/BedwarsRel-MCA/issues) — 分支特有问题请在此反馈
